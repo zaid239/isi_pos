@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "timestamp": "20260919_213734",
+    "schema": "ISI_POS_TEST",
+    "service": "orclpdb1",
+    "charset": "AL32UTF8",
+    "table_count": 1,
+    "total_rows": 1
+  },
+  "tables": {
+    "CATEGORIES": {
+      "columns": [
+        "id",
+        "cat_name"
+      ],
+      "rows": [
+        {
+          "id": "CATEGORIES"
+        }
+      ]
+    }
+  }
+}

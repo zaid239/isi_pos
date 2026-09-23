@@ -1,0 +1,11 @@
+;;; ============================================================
+;;; Oracle Database Logical Export
+;;; Schema: ISI_POS_TEST | Service: orclpdb1 | Time: 2026-09-21T08:23:22.156291
+;;; Character Set: AL32UTF8
+;;; ============================================================
+. . exported "ISI_POS_TEST"."CATEGORIES"                1 rows
+;;; ------------------------------------------------------------
+Master export for schema "ISI_POS_TEST" successfully completed.
+Total tables exported: 1
+Total rows exported:   1
+Job completed with 0 errors and 0 warnings.

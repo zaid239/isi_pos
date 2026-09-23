@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Out (Wastage & Deductions) - Noventra POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="max-width: 900px;">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb small mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('stock.index') }}">Stock</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Stock Out</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0 fw-bold" style="color: var(--text-primary);">Record Stock Out</h1>
+        </div>
+        <a href="{{ url_for('stock.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Stock
+        </a>
+    </div>
+
+    <form method="POST" action="{{ url_for('stock.stock_out') }}" id="stockOutForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="card-title mb-0 fw-bold" style="color: var(--text-primary);">
+                    <i class="bi bi-box-arrow-up-right me-2 text-danger"></i>Details
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Select Item <span class="text-danger">*</span></label>
+                        <select name="item_id" id="itemSelect" class="form-select form-select-lg" required>
+                            <option value="">-- Choose Item to Deduct --</option>
+                            {% for it in items %}
+                            <option value="{{ it.id }}" 
+                                    data-stock="{{ '%.3f'|format(it.current_stock) }}"
+                                    data-unit="{{ it.unit.unit_code if it.unit else 'pcs' }}"
+                                    data-allow-dec="{{ it.unit.allow_decimal if it.unit else 0 }}"
+                                    {% if preselected_id == it.id %}selected{% endif %}>
+                                {{ it.item_name }} ({{ it.sku }}) - Current: {{ ("%d"|format(it.current_stock)) if it.unit and not it.unit.allow_decimal else ("%.2f"|format(it.current_stock)) }} {{ it.unit.unit_code if it.unit else '' }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Live Stock on Hand Indicator -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Current Stock on Hand</label>
+                        <div class="input-group">
+                            <input type="text" id="currentStockDisplay" class="form-control bg-light font-monospace fw-bold fs-5 text-end" value="0" readonly>
+                            <span class="input-group-text bg-light unit-label">pcs</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold">Quantity to Deduct <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" step="0.001" min="0.001" name="quantity" id="quantityInput" class="form-control font-monospace fw-bold fs-5 text-end" placeholder="0" required>
+                            <span class="input-group-text unit-label">pcs</span>
+                        </div>
+                        <div class="text-danger extra-small mt-1 d-none" id="qtyError">Cannot exceed stock on hand.</div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold">Reason for Deduction <span class="text-danger">*</span></label>
+                        <select name="reason" class="form-select" required>
+                            <option value="">-- Select Reason --</option>
+                            <option value="wastage">Wastage / Spoiled</option>
+                            <option value="damage">Damaged Goods</option>
+                            <option value="staff_use">Staff Consumption / Internal Use</option>
+                            <option value="other">Other Disposal / Write-Off</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold">Audit Notes</label>
+                        <input type="text" name="notes" class="form-control" placeholder="Optional notes for the stock movement ledger">
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light py-3 d-flex justify-content-end align-items-center">
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('stock.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-danger px-4" id="submitBtn">
+                        <i class="bi bi-dash-circle me-1"></i>Confirm Stock Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const itemSelect = document.getElementById('itemSelect');
+    const stockDisplay = document.getElementById('currentStockDisplay');
+    const qtyInput = document.getElementById('quantityInput');
+    const unitLabels = document.querySelectorAll('.unit-label');
+    const qtyError = document.getElementById('qtyError');
+    const form = document.getElementById('stockOutForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    let currentStock = 0;
+
+    function updateItemDetails() {
+        const opt = itemSelect.selectedOptions[0];
+        if (opt && opt.value) {
+            currentStock = parseFloat(opt.getAttribute('data-stock') || '0');
+            const unit = opt.getAttribute('data-unit') || 'pcs';
+            const allowDec = opt.getAttribute('data-allow-dec') === '1';
+
+            stockDisplay.value = allowDec ? currentStock.toFixed(3) : Math.round(currentStock);
+            unitLabels.forEach(el => el.textContent = unit);
+            qtyInput.max = currentStock;
+            qtyInput.step = allowDec ? "0.001" : "1";
+            qtyInput.placeholder = allowDec ? "0.000" : "0";
+        } else {
+            currentStock = 0;
+            stockDisplay.value = "0";
+            unitLabels.forEach(el => el.textContent = 'pcs');
+            qtyInput.max = "";
+            qtyInput.step = "1";
+            qtyInput.placeholder = "0";
+        }
+        validateQty();
+    }
+
+    function validateQty() {
+        const entered = parseFloat(qtyInput.value || '0');
+        if (entered > currentStock) {
+            qtyError.classList.remove('d-none');
+            submitBtn.disabled = true;
+        } else {
+            qtyError.classList.add('d-none');
+            submitBtn.disabled = false;
+        }
+    }
+
+    itemSelect.addEventListener('change', updateItemDetails);
+    qtyInput.addEventListener('input', validateQty);
+
+    if (itemSelect.value) {
+        updateItemDetails();
+    }
+
+    // Double submit protection
+    let isSubmitting = false;
+    form.addEventListener('submit', function(e) {
+        const entered = parseFloat(qtyInput.value || '0');
+        if (!itemSelect.value || entered <= 0 || entered > currentStock) {
+            e.preventDefault();
+            return false;
+        }
+        if (isSubmitting) {
+            e.preventDefault();
+            return false;
+        }
+        isSubmitting = true;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving Stock Out...';
+    });
+});
+</script>
+{% endblock %}

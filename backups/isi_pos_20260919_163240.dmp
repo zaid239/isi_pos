@@ -1,0 +1,664 @@
+{
+  "metadata": {
+    "timestamp": "20260919_163240",
+    "schema": "ISI",
+    "service": "orclpdb1",
+    "charset": "AL32UTF8",
+    "table_count": 31,
+    "total_rows": 1
+  },
+  "tables": {
+    "ALEMBIC_VERSION": {
+      "columns": [
+        "version_num"
+      ],
+      "rows": [
+        {
+          "version_num": "016195699ff9"
+        }
+      ]
+    },
+    "AUDIT_LOGS": {
+      "columns": [
+        "user_id",
+        "action_name",
+        "module_name",
+        "record_id",
+        "old_val",
+        "new_val",
+        "ip_address",
+        "user_agent",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "CATEGORIES": {
+      "columns": [
+        "parent_id",
+        "cat_name",
+        "cat_name_ur",
+        "cat_code",
+        "sort_order",
+        "is_active",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "CUSTOMERS": {
+      "columns": [
+        "customer_name",
+        "phone_no",
+        "email",
+        "address",
+        "nic_no",
+        "opening_balance",
+        "current_balance",
+        "notes",
+        "is_walk_in",
+        "is_active",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "DOC_COUNTERS": {
+      "columns": [
+        "id",
+        "terminal_code",
+        "counter_code",
+        "doc_type",
+        "fiscal_year",
+        "next_no",
+        "updated_at"
+      ],
+      "rows": []
+    },
+    "EXPENSES": {
+      "columns": [
+        "expense_no",
+        "expense_date",
+        "expense_head_id",
+        "amount",
+        "payment_mode_id",
+        "recipient",
+        "notes",
+        "receipt_img",
+        "user_id",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "EXPENSE_HEADS": {
+      "columns": [
+        "head_name",
+        "head_code",
+        "description",
+        "is_active",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "HELD_BILLS": {
+      "columns": [
+        "id",
+        "terminal_code",
+        "counter_code",
+        "hold_reference",
+        "cashier_id",
+        "cart_payload",
+        "created_at",
+        "updated_at"
+      ],
+      "rows": []
+    },
+    "INVOICES": {
+      "columns": [
+        "invoice_no",
+        "invoice_date",
+        "idempotency_key",
+        "counter_code",
+        "customer_id",
+        "cashier_id",
+        "shift_id",
+        "subtotal",
+        "discount_rate",
+        "discount_amount",
+        "taxable_amount",
+        "tax_amount",
+        "round_off",
+        "payable_amount",
+        "paid_amount",
+        "change_amount",
+        "status_code",
+        "notes",
+        "fbr_invoice_no",
+        "fbr_status",
+        "fbr_response",
+        "fbr_synced_at",
+        "pos_reg_no",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "INVOICE_ITEMS": {
+      "columns": [
+        "invoice_id",
+        "item_id",
+        "snap_item_name",
+        "snap_sku",
+        "quantity",
+        "unit_price",
+        "cost_price",
+        "line_disc_amt",
+        "taxable_val",
+        "tax_pct",
+        "tax_amount",
+        "line_total",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "INVOICE_PAYMENTS": {
+      "columns": [
+        "invoice_id",
+        "payment_mode_id",
+        "amount",
+        "tendered_amt",
+        "change_amt",
+        "card_type",
+        "card_last4",
+        "bank_name",
+        "terminal_ref",
+        "payment_date",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "ITEMS": {
+      "columns": [
+        "sku",
+        "barcode",
+        "item_name",
+        "item_name_ur",
+        "category_id",
+        "unit_id",
+        "supplier_id",
+        "description",
+        "cost_price",
+        "sale_price",
+        "wholesale_price",
+        "tax_percent",
+        "discount_limit",
+        "opening_stock",
+        "current_stock",
+        "reorder_level",
+        "expiry_date",
+        "is_active",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "ITEM_IMAGES": {
+      "columns": [
+        "item_id",
+        "file_name",
+        "file_path",
+        "file_size",
+        "mime_type",
+        "is_primary",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "LOGIN_HISTORY": {
+      "columns": [
+        "user_id",
+        "username_attempted",
+        "ip_address",
+        "user_agent",
+        "login_status",
+        "failure_reason",
+        "attempted_at",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "PAYMENT_MODES": {
+      "columns": [
+        "mode_code",
+        "mode_name",
+        "is_active",
+        "requires_ref",
+        "sort_order",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "PAYMENT_TRANSACTIONS": {
+      "columns": [
+        "gateway_name",
+        "gateway_txn_id",
+        "invoice_id",
+        "amount",
+        "currency_code",
+        "status_code",
+        "raw_request",
+        "raw_response",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "PRINT_JOBS": {
+      "columns": [
+        "id",
+        "invoice_id",
+        "printer_name",
+        "job_type",
+        "job_status",
+        "attempt_count",
+        "last_error",
+        "payload",
+        "created_at",
+        "updated_at"
+      ],
+      "rows": []
+    },
+    "PURCHASES": {
+      "columns": [
+        "purchase_no",
+        "supplier_id",
+        "purchase_date",
+        "supplier_inv_no",
+        "subtotal",
+        "freight_charges",
+        "other_charges",
+        "tax_amount",
+        "total_amount",
+        "notes",
+        "status_code",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "PURCHASE_ITEMS": {
+      "columns": [
+        "purchase_id",
+        "item_id",
+        "quantity",
+        "unit_cost",
+        "line_tax_pct",
+        "line_tax_amt",
+        "line_total",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "ROLES": {
+      "columns": [
+        "role_name",
+        "role_code",
+        "description",
+        "is_system",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "SALES_RETURNS": {
+      "columns": [
+        "return_no",
+        "invoice_id",
+        "return_date",
+        "cashier_id",
+        "total_refund",
+        "notes",
+        "status_code",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "SALES_RETURN_ITEMS": {
+      "columns": [
+        "return_id",
+        "invoice_item_id",
+        "item_id",
+        "quantity",
+        "refund_amount",
+        "reason",
+        "restock_flag",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "SETTINGS": {
+      "columns": [
+        "setting_key",
+        "setting_val",
+        "setting_type",
+        "group_name",
+        "description",
+        "is_public",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "SHIFTS": {
+      "columns": [
+        "cashier_id",
+        "counter_code",
+        "opened_at",
+        "closed_at",
+        "opening_cash",
+        "closing_cash",
+        "expected_cash",
+        "cash_diff",
+        "shift_status",
+        "notes",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "STOCK_ADJUSTMENTS": {
+      "columns": [
+        "adj_no",
+        "item_id",
+        "adj_qty",
+        "reason",
+        "user_id",
+        "approved_by",
+        "approved_at",
+        "status_code",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "STOCK_MOVEMENTS": {
+      "columns": [
+        "item_id",
+        "qty_before",
+        "qty_change",
+        "qty_after",
+        "movement_type",
+        "ref_doc_type",
+        "ref_doc_no",
+        "unit_cost",
+        "user_id",
+        "notes",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "SUPPLIERS": {
+      "columns": [
+        "supplier_name",
+        "contact_person",
+        "phone_no",
+        "email",
+        "address",
+        "ntn",
+        "opening_balance",
+        "current_payable",
+        "notes",
+        "is_active",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "SYNC_BATCHES": {
+      "columns": [
+        "id",
+        "batch_id",
+        "terminal_code",
+        "row_count",
+        "applied_count",
+        "skipped_count",
+        "received_at",
+        "status_code",
+        "error_summary"
+      ],
+      "rows": []
+    },
+    "SYNC_OUTBOX": {
+      "columns": [
+        "id",
+        "table_name",
+        "row_uid",
+        "operation",
+        "row_version",
+        "payload",
+        "batch_id",
+        "status_code",
+        "attempts",
+        "last_error",
+        "created_at",
+        "synced_at"
+      ],
+      "rows": []
+    },
+    "UNITS": {
+      "columns": [
+        "unit_name",
+        "unit_code",
+        "allow_decimal",
+        "is_active",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    },
+    "USERS": {
+      "columns": [
+        "username",
+        "password_hash",
+        "full_name",
+        "email",
+        "phone_no",
+        "role_id",
+        "is_active",
+        "must_change_pwd",
+        "failed_attempts",
+        "locked_until",
+        "last_login_at",
+        "id",
+        "sync_uid",
+        "terminal_code",
+        "row_version",
+        "created_at",
+        "updated_at",
+        "created_by",
+        "updated_by",
+        "deleted_at"
+      ],
+      "rows": []
+    }
+  }
+}

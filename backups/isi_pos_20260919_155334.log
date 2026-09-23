@@ -1,0 +1,41 @@
+;;; ============================================================
+;;; Oracle Database Logical Export
+;;; Schema: ISI_POS_TEST | Service: orclpdb1 | Time: 2026-09-19T15:53:34.071042
+;;; Character Set: AL32UTF8
+;;; ============================================================
+. . exported "ISI_POS_TEST"."ALEMBIC_VERSION"                1 rows
+. . exported "ISI_POS_TEST"."AUDIT_LOGS"                0 rows
+. . exported "ISI_POS_TEST"."CATEGORIES"                12 rows
+. . exported "ISI_POS_TEST"."CUSTOMERS"                0 rows
+. . exported "ISI_POS_TEST"."DOC_COUNTERS"                0 rows
+. . exported "ISI_POS_TEST"."EXPENSES"                0 rows
+. . exported "ISI_POS_TEST"."EXPENSE_HEADS"                0 rows
+. . exported "ISI_POS_TEST"."HELD_BILLS"                0 rows
+. . exported "ISI_POS_TEST"."INVOICES"                0 rows
+. . exported "ISI_POS_TEST"."INVOICE_ITEMS"                0 rows
+. . exported "ISI_POS_TEST"."INVOICE_PAYMENTS"                0 rows
+. . exported "ISI_POS_TEST"."ITEMS"                34 rows
+. . exported "ISI_POS_TEST"."ITEM_IMAGES"                0 rows
+. . exported "ISI_POS_TEST"."LOGIN_HISTORY"                79 rows
+. . exported "ISI_POS_TEST"."PAYMENT_MODES"                0 rows
+. . exported "ISI_POS_TEST"."PAYMENT_TRANSACTIONS"                0 rows
+. . exported "ISI_POS_TEST"."PRINT_JOBS"                0 rows
+. . exported "ISI_POS_TEST"."PURCHASES"                0 rows
+. . exported "ISI_POS_TEST"."PURCHASE_ITEMS"                0 rows
+. . exported "ISI_POS_TEST"."ROLES"                1 rows
+. . exported "ISI_POS_TEST"."SALES_RETURNS"                0 rows
+. . exported "ISI_POS_TEST"."SALES_RETURN_ITEMS"                0 rows
+. . exported "ISI_POS_TEST"."SETTINGS"                0 rows
+. . exported "ISI_POS_TEST"."SHIFTS"                0 rows
+. . exported "ISI_POS_TEST"."STOCK_ADJUSTMENTS"                0 rows
+. . exported "ISI_POS_TEST"."STOCK_MOVEMENTS"                0 rows
+. . exported "ISI_POS_TEST"."SUPPLIERS"                0 rows
+. . exported "ISI_POS_TEST"."SYNC_BATCHES"                0 rows
+. . exported "ISI_POS_TEST"."SYNC_OUTBOX"                274 rows
+. . exported "ISI_POS_TEST"."UNITS"                9 rows
+. . exported "ISI_POS_TEST"."USERS"                27 rows
+;;; ------------------------------------------------------------
+Master export for schema "ISI_POS_TEST" successfully completed.
+Total tables exported: 31
+Total rows exported:   437
+Job completed with 0 errors and 0 warnings.

@@ -1,0 +1,39 @@
+<!-- Shared Image Cropper Modal (Cropper.js) -->
+<div class="modal fade" id="imageCropperModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="imageCropperModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2 px-3 border-bottom d-flex align-items-center">
+                <h6 class="modal-title fw-bold mb-0" id="imageCropperModalLabel" style="color: var(--text-primary);">
+                    <i class="bi bi-crop me-2"></i>Crop &amp; Frame Photo
+                </h6>
+                <span class="cropper-dim-badge ms-auto me-3" id="cropperOutputDimBadge">
+                    Output: 800 &times; 800 px
+                </span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="cropperCloseBtn"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="cropper-view-container">
+                    <img id="cropperSourceImage" src="" alt="Crop Source">
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-3 border-top d-flex justify-content-between">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cropperRotateBtn" title="Rotate 90 degrees">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Rotate
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cropperResetBtn" title="Reset crop box">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal" id="cropperCancelBtn">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary fw-bold px-3" id="cropperApplyBtn">
+                        <i class="bi bi-check2 me-1"></i>Use photo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

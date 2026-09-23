@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}Reports Center - Noventra POS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Deliberately dense classic desktop report console */
+    .desktop-report-panel {
+        background-color: #FFFFFF;
+        border: 1px solid var(--border, #E3E6EA);
+        border-radius: 6px;
+        box-shadow: none;
+        overflow: hidden;
+        max-width: 820px;
+        margin: 0;
+        font-family: var(--font-stack, "Segoe UI", system-ui, -apple-system, sans-serif);
+        font-size: 14px;
+        font-weight: 400;
+        color: #1F2328;
+    }
+
+    .desktop-report-titlebar {
+        background-color: #F8FAFC;
+        border-bottom: 1px solid var(--border, #E3E6EA);
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1F2328;
+        line-height: 1.4;
+    }
+
+    .desktop-report-content {
+        display: flex;
+        min-height: 310px;
+    }
+
+    /* Left box: plain list, one radio and report name per line, ~28px row */
+    .desktop-report-left {
+        width: 230px;
+        min-width: 230px;
+        border-right: 1px solid var(--border, #E3E6EA);
+        background-color: #FFFFFF;
+        padding: 8px 0;
+    }
+
+    .report-choice-row {
+        height: 28px;
+        min-height: 28px;
+        line-height: 28px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 14px;
+        cursor: pointer;
+        user-select: none;
+        font-size: 14px;
+        font-weight: 400;
+        color: #1F2328;
+        margin: 0;
+        text-transform: none;
+        transition: background-color 0.1s ease;
+    }
+
+    .report-choice-row:hover {
+        background-color: #F1F3F5;
+    }
+
+    .report-choice-row.active-report {
+        background-color: #EBF2FA;
+        font-weight: 500;
+    }
+
+    .report-choice-row input[type="radio"] {
+        margin: 0;
+        cursor: pointer;
+        accent-color: var(--accent, #2563EB);
+    }
+
+    /* Right side: two-column form, label 110px bold, input 250px, row 34px */
+    .desktop-report-right {
+        flex: 1;
+        padding: 12px 20px;
+        background-color: #FFFFFF;
+    }
+
+    .param-row {
+        height: 34px;
+        min-height: 34px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 2px;
+        transition: opacity 0.15s ease;
+    }
+
+    .param-row .param-label {
+        width: 110px;
+        min-width: 110px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #1F2328;
+        margin: 0;
+        line-height: 34px;
+        display: inline-block !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+    }
+
+    .param-row .param-input {
+        width: 250px !important;
+        max-width: 250px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        font-size: 14px !important;
+        font-weight: 400 !important;
+        padding: 2px 8px !important;
+        border: 1px solid var(--input-border, #CED4DA) !important;
+        border-radius: 4px !important;
+        background-color: #FFFFFF !important;
+        color: #1F2328 !important;
+        outline: none !important;
+        box-shadow: none !important;
+        line-height: normal !important;
+    }
+
+    .param-row .param-input:focus {
+        border-color: var(--accent, #2563EB) !important;
+        box-shadow: 0 0 0 1px var(--accent, #2563EB) !important;
+    }
+
+    /* Disabled parameters remain visible but greyed */
+    .param-row.param-disabled {
+        opacity: 0.45;
+    }
+
+    .param-row.param-disabled .param-label {
+        color: #6C757D !important;
+    }
+
+    .param-row.param-disabled .param-input {
+        background-color: #F1F3F5 !important;
+        border-color: #E3E6EA !important;
+        color: #6C757D !important;
+        cursor: not-allowed !important;
+        pointer-events: none !important;
+    }
+
+    /* Action buttons below parameters */
+    .param-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border, #E3E6EA);
+    }
+
+    .btn-generate {
+        height: 34px !important;
+        min-height: 34px !important;
+        padding: 0 18px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        border-radius: 4px !important;
+        text-transform: none !important;
+    }
+
+    .btn-export {
+        height: 28px !important;
+        min-height: 28px !important;
+        padding: 0 12px !important;
+        font-size: 13px !important;
+        font-weight: 400 !important;
+        border-radius: 4px !important;
+        text-transform: none !important;
+        border: 1px solid #CED4DA !important;
+        color: #495057 !important;
+        background-color: #FFFFFF !important;
+    }
+
+    .btn-export:hover {
+        background-color: #F8FAFC !important;
+        border-color: #ADB5BD !important;
+        color: #1F2328 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 px-3">
+    <!-- Single Bordered Panel with simple title bar -->
+    <div class="desktop-report-panel">
+        <div class="desktop-report-titlebar">
+            Reports Center
+        </div>
+        <div class="desktop-report-content">
+            <!-- Left Box: plain list, one radio and report name per line, ~28px row -->
+            <div class="desktop-report-left">
+                <div class="report-list" id="reportSelectorGroup">
+                    {% for r in registry %}
+                    <label class="report-choice-row {% if (criteria.view or 'invoice') == r.id %}active-report{% endif %}"
+                           data-report-id="{{ r.id }}">
+                        <input class="report-radio" type="radio" name="report_picker" id="radio_{{ r.id }}"
+                               value="{{ r.id }}" {% if (criteria.view or 'invoice') == r.id %}checked{% endif %}>
+                        <span class="report-name">{{ r.title }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Right Side: Two-column form (110px label on left, 250px input on right, 34px row) -->
+            <div class="desktop-report-right">
+                <form id="reportCenterForm" method="GET">
+                    <input type="hidden" name="view" id="formReportView" value="{{ criteria.view or 'invoice' }}">
+
+                    <div class="param-row" id="wrap_date_from">
+                        <label for="param_date_from" class="param-label">From Date</label>
+                        <input type="date" name="date_from" id="param_date_from" class="param-input"
+                               value="{{ criteria.date_from or today_str }}">
+                    </div>
+
+                    <div class="param-row" id="wrap_date_to">
+                        <label for="param_date_to" class="param-label">To Date</label>
+                        <input type="date" name="date_to" id="param_date_to" class="param-input"
+                               value="{{ criteria.date_to or today_str }}">
+                    </div>
+
+                    <div class="param-row" id="wrap_invoice_no">
+                        <label for="param_invoice_no" class="param-label">Invoice #</label>
+                        <input type="text" name="invoice_no" id="param_invoice_no" class="param-input"
+                               placeholder="All invoices" value="{{ criteria.invoice_no }}">
+                    </div>
+
+                    <div class="param-row" id="wrap_cashier_id">
+                        <label for="param_cashier_id" class="param-label">Cashier</label>
+                        <select name="cashier_id" id="param_cashier_id" class="param-input">
+                            <option value="">All Cashiers</option>
+                            {% for u in cashiers %}
+                            <option value="{{ u.id }}" {% if criteria.cashier_id == u.id %}selected{% endif %}>
+                                {{ u.full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="param-row" id="wrap_payment_mode">
+                        <label for="param_payment_mode" class="param-label">Payment Mode</label>
+                        <select name="payment_mode" id="param_payment_mode" class="param-input">
+                            <option value="">All Payment Modes</option>
+                            {% for mode in active_modes %}
+                            <option value="{{ mode.mode_code }}" {% if criteria.payment_mode == mode.mode_code %}selected{% endif %}>
+                                {{ mode.mode_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="param-row" id="wrap_status">
+                        <label for="param_status" class="param-label">Invoice Status</label>
+                        <select name="status" id="param_status" class="param-input">
+                            <option value="completed" {% if criteria.status == 'completed' %}selected{% endif %}>Completed Only</option>
+                            <option value="voided" {% if criteria.status == 'voided' %}selected{% endif %}>Voided Only</option>
+                            <option value="all" {% if criteria.status == 'all' %}selected{% endif %}>All Statuses</option>
+                        </select>
+                    </div>
+
+                    <div class="param-row" id="wrap_item_query">
+                        <label for="param_item_query" class="param-label">Item / SKU</label>
+                        <input type="text" name="item_query" id="param_item_query" class="param-input"
+                               placeholder="Search by name or SKU" value="{{ criteria.item_query }}">
+                    </div>
+
+                    <div class="param-row" id="wrap_category_id">
+                        <label for="param_category_id" class="param-label">Category</label>
+                        <select name="category_id" id="param_category_id" class="param-input">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if criteria.category_id == cat.id %}selected{% endif %}>
+                                {{ cat.cat_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Generate Report below parameters, left-aligned, Export Excel beside it -->
+                    <div class="param-actions">
+                        <button type="button" id="btnGenerateReport" class="btn btn-primary btn-generate">Generate Report</button>
+                        <button type="button" id="btnExportExcel" class="btn btn-export">Export Excel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const registry = {{ registry | tojson }};
+
+    const paramMap = {
+        'date_from': {
+            wrapper: document.getElementById('wrap_date_from'),
+            input: document.getElementById('param_date_from'),
+        },
+        'date_to': {
+            wrapper: document.getElementById('wrap_date_to'),
+            input: document.getElementById('param_date_to'),
+        },
+        'invoice_no': {
+            wrapper: document.getElementById('wrap_invoice_no'),
+            input: document.getElementById('param_invoice_no'),
+        },
+        'cashier_id': {
+            wrapper: document.getElementById('wrap_cashier_id'),
+            input: document.getElementById('param_cashier_id'),
+        },
+        'payment_mode': {
+            wrapper: document.getElementById('wrap_payment_mode'),
+            input: document.getElementById('param_payment_mode'),
+        },
+        'status': {
+            wrapper: document.getElementById('wrap_status'),
+            input: document.getElementById('param_status'),
+        },
+        'item_query': {
+            wrapper: document.getElementById('wrap_item_query'),
+            input: document.getElementById('param_item_query'),
+        },
+        'category_id': {
+            wrapper: document.getElementById('wrap_category_id'),
+            input: document.getElementById('param_category_id'),
+        },
+    };
+
+    function selectReport(reportId) {
+        const report = registry.find(r => r.id === reportId) || registry[0];
+        document.getElementById('formReportView').value = report.id;
+
+        // Update list items
+        document.querySelectorAll('.report-choice-row').forEach(item => {
+            const radio = item.querySelector('.report-radio');
+            if (item.getAttribute('data-report-id') === report.id) {
+                item.classList.add('active-report');
+                if (radio) radio.checked = true;
+            } else {
+                item.classList.remove('active-report');
+                if (radio) radio.checked = false;
+            }
+        });
+
+        // Enable or disable parameters strictly without hiding
+        const supported = report.supported_params || [];
+        Object.keys(paramMap).forEach(key => {
+            const item = paramMap[key];
+            if (!item || !item.input || !item.wrapper) return;
+
+            const isSupported = supported.includes(key);
+            item.input.disabled = !isSupported;
+            if (isSupported) {
+                item.wrapper.classList.remove('param-disabled');
+            } else {
+                item.wrapper.classList.add('param-disabled');
+            }
+        });
+    }
+
+    // Attach click events on report choices
+    document.querySelectorAll('.report-choice-row').forEach(item => {
+        item.addEventListener('click', function(e) {
+            const reportId = this.getAttribute('data-report-id');
+            selectReport(reportId);
+        });
+    });
+
+    document.querySelectorAll('.report-radio').forEach(radio => {
+        radio.addEventListener('change', function() {
+            selectReport(this.value);
+        });
+    });
+
+    // Button actions
+    const form = document.getElementById('reportCenterForm');
+
+    document.getElementById('btnGenerateReport').addEventListener('click', function() {
+        form.action = "{{ url_for('reports.export_pdf') }}";
+        form.target = "_blank";
+        form.submit();
+    });
+
+    document.getElementById('btnExportExcel').addEventListener('click', function() {
+        form.action = "{{ url_for('reports.export_excel') }}";
+        form.target = "_self";
+        form.submit();
+    });
+
+    // Initial state initialization
+    const initialView = document.getElementById('formReportView').value || 'invoice';
+    selectReport(initialView);
+});
+</script>
+{% endblock %}

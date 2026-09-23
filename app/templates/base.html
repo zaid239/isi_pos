@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Dashboard{% endblock %} - {{ org_name_en }}</title>
+    
+    <!-- Dynamic Favicon (64px thickened from icon or legacy) -->
+    {% set fav_url = image_url(app_settings.brand_favicon_url) if app_settings and app_settings.brand_favicon_url else (image_url(app_settings.org_favicon_url) if app_settings and app_settings.org_favicon_url else None) %}
+    {% if fav_url %}
+    <link rel="icon" type="image/png" href="{{ fav_url }}">
+    {% endif %}
+
+    <!-- Local Offline Bootstrap 5 & Bootstrap Icons -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
+    
+    <!-- Custom Application CSS & Dynamic Theme Palette -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <style>
+        :root {
+            /* Keep theme colour picker in Settings working by overriding --accent */
+            --accent: {{ theme_primary|default('#2563eb') }};
+            --bs-primary: var(--accent);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-wrapper d-flex">
+        {% if current_user.is_authenticated %}
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar d-flex flex-column" id="sidebar">
+            <div class="sidebar-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    {% set wordmark_black = image_url(app_settings.brand_wordmark_black_url) if app_settings and app_settings.brand_wordmark_black_url else (image_url(app_settings.org_logo_url) if app_settings and app_settings.org_logo_url and app_settings.org_logo_url != '/static/images/default-logo.png' else None) %}
+                    {% set wordmark_white = image_url(app_settings.brand_wordmark_white_url) if app_settings and app_settings.brand_wordmark_white_url else None %}
+                    {% if wordmark_black or wordmark_white %}
+                    <img src="{{ wordmark_black or wordmark_white }}"
+                         data-src-black="{{ wordmark_black or '' }}"
+                         data-src-white="{{ wordmark_white or '' }}"
+                         alt="{{ org_name_en }}"
+                         class="brand-adaptive-logo"
+                         style="height: 32px; width: auto; max-width: 185px; object-fit: contain;">
+                    {% else %}
+                    <span class="sidebar-brand-name text-truncate" style="max-width: 165px;">{{ org_name_en }}</span>
+                    {% endif %}
+                </div>
+                <button class="btn btn-sm btn-outline-secondary d-md-none" id="sidebarClose">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            
+            <div class="sidebar-menu flex-grow-1 p-2 overflow-y-auto">
+                <ul class="nav flex-column gap-1">
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.blueprint == 'dashboard' and request.endpoint != 'dashboard.system_info' %}active{% endif %}">
+                            <i class="bi bi-grid-1x2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('pos.index') }}" class="nav-link {% if request.blueprint == 'pos' %}active{% endif %}">
+                            <i class="bi bi-calculator"></i>
+                            <span>Point of Sale</span>
+                            <span class="sidebar-badge ms-auto">F2</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.blueprint == 'items' %}active{% endif %}" data-bs-toggle="collapse" href="#itemsSubmenu" role="button">
+                            <i class="bi bi-box-seam"></i>
+                            <span>Items &amp; Menu</span>
+                            <i class="bi bi-chevron-down ms-auto small"></i>
+                        </a>
+                        <div class="collapse ps-3 mt-1 {% if request.blueprint == 'items' %}show{% endif %}" id="itemsSubmenu">
+                            <ul class="nav flex-column gap-1 border-start ps-2" style="border-color: var(--border) !important;">
+                                <li><a href="{{ url_for('items.index') }}" class="nav-link py-1 px-2 small {% if request.endpoint == 'items.index' %}fw-bold text-dark{% endif %}">All Items</a></li>
+                                <li><a href="{{ url_for('items.create') }}" class="nav-link py-1 px-2 small {% if request.endpoint == 'items.create' %}fw-bold text-dark{% endif %}">New Item</a></li>
+                                <li><a href="{{ url_for('items.categories') }}" class="nav-link py-1 px-2 small {% if request.endpoint == 'items.categories' %}fw-bold text-dark{% endif %}">Categories</a></li>
+                                <li><a href="{{ url_for('items.units') }}" class="nav-link py-1 px-2 small {% if request.endpoint == 'items.units' %}fw-bold text-dark{% endif %}">Units</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    {% if current_user.role_code in ['super_admin', 'manager'] %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.blueprint == 'stock' %}active{% endif %}" data-bs-toggle="collapse" href="#stockSubmenu" role="button">
+                            <i class="bi bi-boxes"></i>
+                            <span>Stock</span>
+                            <i class="bi bi-chevron-down ms-auto small"></i>
+                        </a>
+                        <div class="collapse ps-3 mt-1 {% if request.blueprint == 'stock' %}show{% endif %}" id="stockSubmenu">
+                            <ul class="nav flex-column gap-1 border-start ps-2" style="border-color: var(--border) !important;">
+                                <li><a href="{{ url_for('stock.index') }}" class="nav-link py-1 px-2 small {% if request.endpoint == 'stock.index' %}fw-bold text-dark{% endif %}">Stock Inventory</a></li>
+                                <li><a href="{{ url_for('stock.stock_in') }}" class="nav-link py-1 px-2 small {% if request.endpoint == 'stock.stock_in' %}fw-bold text-dark{% endif %}">Stock In</a></li>
+                                <li><a href="{{ url_for('stock.stock_out') }}" class="nav-link py-1 px-2 small {% if request.endpoint == 'stock.stock_out' %}fw-bold text-dark{% endif %}">Stock Out</a></li>
+                                <li><a href="{{ url_for('stock.adjustment') }}" class="nav-link py-1 px-2 small {% if request.endpoint == 'stock.adjustment' %}fw-bold text-dark{% endif %}">Physical Count</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('reports.sales') }}" class="nav-link {% if request.blueprint == 'reports' %}active{% endif %}">
+                            <i class="bi bi-bar-chart"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if current_user.role_code == 'super_admin' %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('settings.index') }}" class="nav-link {% if request.blueprint == 'settings' %}active{% endif %}">
+                            <i class="bi bi-gear"></i>
+                            <span>Settings &amp; Sync</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.system_info') }}" class="nav-link {% if request.endpoint == 'dashboard.system_info' %}active{% endif %}">
+                            <i class="bi bi-cpu"></i>
+                            <span>System Info</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="user-info">
+                        <div class="sidebar-user-name text-truncate" style="max-width: 140px;">{{ current_user.full_name }}</div>
+                        <div class="sidebar-user-role">{{ current_user.role_code|title }}</div>
+                    </div>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-secondary p-1 px-2" title="Logout">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+        {% endif %}
+
+        <!-- Main Content Area -->
+        <div class="main-content flex-grow-1 d-flex flex-column min-vh-100">
+            {% if current_user.is_authenticated %}
+            <!-- Top Navbar -->
+            <nav class="navbar navbar-expand px-3 py-2 sticky-top">
+                <button class="btn btn-outline-secondary d-md-none me-2" id="sidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                
+                <div class="d-flex align-items-center gap-2">
+                    <span class="nav-badge-subtle">Terminal: {{ terminal_code }}</span>
+                    <span class="nav-badge-subtle">Counter: {{ counter_code }}</span>
+                    <span class="nav-badge-status">
+                        <span class="indicator-dot"></span>
+                        <span id="connStatus">Oracle Local: OK</span>
+                    </span>
+                </div>
+
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <a href="{{ url_for('auth.change_password') }}" class="btn btn-sm btn-outline-secondary" title="Change Password">
+                        <i class="bi bi-key"></i>
+                    </a>
+                </div>
+            </nav>
+            {% endif %}
+
+            <!-- Flash Notifications -->
+            <div class="container-fluid px-4 pt-3">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show border" role="alert" style="border-radius: var(--radius-card);">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Page Body -->
+            <main class="container-fluid px-4 py-3 flex-grow-1">
+                {% block content %}{% endblock %}
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer border-top py-2 px-4 text-center small mt-auto">
+                <span>&copy; {{ org_name_en }} &middot; Production POS &middot; Offline-First Architecture</span>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Local Offline Bootstrap JS -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script>window.CURRENCY_SYMBOL = {{ currency_symbol | tojson }};</script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+    (function() {
+        function pickBrandContrast() {
+            document.querySelectorAll('.brand-adaptive-logo').forEach(function(img) {
+                var parent = img.closest('.sidebar-header') || img.parentElement;
+                if (!parent) return;
+                var bg = window.getComputedStyle(parent).backgroundColor;
+                var m = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                if (m) {
+                    var r = parseInt(m[1], 10), g = parseInt(m[2], 10), b = parseInt(m[3], 10);
+                    var lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                    var blackSrc = img.getAttribute('data-src-black');
+                    var whiteSrc = img.getAttribute('data-src-white');
+                    if (lum < 140 && whiteSrc) {
+                        img.src = whiteSrc;
+                    } else if (blackSrc) {
+                        img.src = blackSrc;
+                    }
+                }
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', pickBrandContrast);
+        } else {
+            pickBrandContrast();
+        }
+    })();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

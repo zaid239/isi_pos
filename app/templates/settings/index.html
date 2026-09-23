@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}System & Branding Settings | {{ org_name_en }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-1 fw-bold text-dark">System & Organization Settings</h2>
+            <p class="text-muted mb-0 small">Configure institutional branding, tax rules, invoice sequencing, and hardware defaults.</p>
+        </div>
+        <div>
+            <button type="submit" form="settingsForm" class="btn btn-primary px-4 shadow-sm">
+                <i class="bi bi-save me-1"></i> Save Changes
+            </button>
+        </div>
+    </div>
+
+    <form id="settingsForm" method="POST" action="{{ url_for('settings.index') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-pills nav-fill mb-4" id="settingsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-semibold" id="branding-tab" data-bs-toggle="pill" data-bs-target="#branding" type="button" role="tab">
+                    <i class="bi bi-building me-1"></i> Branding & Identity
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="financial-tab" data-bs-toggle="pill" data-bs-target="#financial" type="button" role="tab">
+                    <i class="bi bi-cash-stack me-1"></i> Currency & Financials
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="invoicing-tab" data-bs-toggle="pill" data-bs-target="#invoicing" type="button" role="tab">
+                    <i class="bi bi-receipt me-1"></i> Invoicing & Sequencing
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="hardware-tab" data-bs-toggle="pill" data-bs-target="#hardware" type="button" role="tab">
+                    <i class="bi bi-printer me-1"></i> Receipts & Hardware
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link fw-semibold" href="{{ url_for('settings.payment_modes') }}">
+                    <i class="bi bi-credit-card me-1"></i> Payment Modes
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="settingsTabContent">
+            <!-- 1. Branding & Identity -->
+            <div class="tab-pane fade show active" id="branding" role="tabpanel">
+                <div class="card mb-4">
+                    <div class="card-header py-3 border-bottom">
+                        <h5 class="card-title mb-0 fw-bold" style="color: var(--text-primary);">Institutional Identity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Organization Name <span class="text-danger">*</span></label>
+                                <input type="text" name="org_name_en" class="form-control" value="{{ settings.org_name_en }}" required>
+                                <div class="form-text">Used on receipts, invoices, and navigation bars.</div>
+                            </div>
+
+                            <!-- 1. Icon Slot (1:1 Crop) -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Brand Icon <span class="badge bg-light text-dark border ms-1">1:1 Crop</span></label>
+                                {% set icon_resolved = image_url(settings.brand_icon_black_url) if settings.brand_icon_black_url else None %}
+                                {% set fav_resolved = image_url(settings.brand_favicon_url) if settings.brand_favicon_url else (image_url(settings.org_favicon_url) if settings.org_favicon_url else None) %}
+                                <div class="image-upload-zone"
+                                     data-upload-url="{{ url_for('settings.upload_branding_image', image_type='brand_icon') }}"
+                                     data-remove-url="{{ url_for('settings.remove_branding_image', image_type='brand_icon') }}"
+                                     data-image-kind="brand_icon"
+                                     data-field-name="image"
+                                     data-allowed-exts="png,jpg,jpeg,webp"
+                                     data-max-size-mb="10.0"
+                                     data-confirm-remove="Are you sure you want to remove the brand icon and generated favicon?">
+                                    <div class="image-drop-area position-relative">
+                                        <div class="preview-box">
+                                            {% if icon_resolved %}
+                                            <img src="{{ icon_resolved }}" alt="Icon" class="preview-image">
+                                            <div class="preview-placeholder d-none text-center">
+                                                <i class="bi bi-person-badge fs-2 text-secondary mb-1"></i>
+                                                <div class="small text-secondary fw-medium">Drag icon here or click to browse</div>
+                                            </div>
+                                            {% else %}
+                                            <img src="" alt="Icon" class="preview-image d-none">
+                                            <div class="preview-placeholder text-center">
+                                                <i class="bi bi-person-badge fs-2 text-secondary mb-1"></i>
+                                                <div class="small text-secondary fw-medium">Drag icon here or click to browse</div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="upload-prompt">
+                                            <span class="d-block small text-secondary">Drag 1:1 icon or click to browse (PNG line art &bull; Max 10MB)</span>
+                                        </div>
+
+                                        <!-- Hover Action Overlay -->
+                                        <div class="image-hover-overlay">
+                                            <button type="button" class="btn btn-sm btn-light btn-hover-change shadow-sm">
+                                                <i class="bi bi-arrow-repeat me-1"></i>Change
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger btn-hover-remove shadow-sm">
+                                                <i class="bi bi-trash3 me-1"></i>Remove
+                                            </button>
+                                        </div>
+
+                                        <!-- Determinate Progress Overlay -->
+                                        <div class="upload-progress-overlay d-none">
+                                            <div class="progress mb-2 w-100">
+                                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <div class="progress-label small fw-semibold text-secondary">Uploading... 0%</div>
+                                        </div>
+
+                                        <!-- Success Checkmark Badge -->
+                                        <div class="upload-success-badge d-none position-absolute" style="z-index: 14;">
+                                            <i class="bi bi-check-lg"></i> Uploaded
+                                        </div>
+
+                                        <!-- In-place Retry Box on Error -->
+                                        <div class="upload-retry-box d-none position-absolute" style="z-index: 15;">
+                                            <div class="retry-error-text small fw-semibold mb-2">Upload failed</div>
+                                            <button type="button" class="btn btn-sm btn-light text-danger fw-bold btn-retry-upload">
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Retry
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="file" name="brand_icon" class="image-upload-input d-none" accept=".png,.jpg,.jpeg,.webp">
+                                    <div class="d-flex align-items-center justify-content-between mt-2">
+                                        <div class="upload-feedback flex-grow-1 me-2">
+                                            <div class="upload-error-msg d-none"></div>
+                                            <div class="upload-success-msg d-none"></div>
+                                            <div class="stored-size-badge text-muted small mt-1"></div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-image {% if not icon_resolved %}d-none{% endif %}">
+                                            <i class="bi bi-trash3 me-1"></i>Remove
+                                        </button>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 mt-2 p-2 bg-light rounded border">
+                                        <div class="d-flex align-items-center justify-content-center bg-white border rounded" style="width: 36px; height: 36px;">
+                                            <img src="{{ fav_resolved or '' }}" alt="Favicon" class="preview-image-favicon {% if not fav_resolved %}d-none{% endif %}" style="width: 24px; height: 24px; object-fit: contain;">
+                                            <i class="bi bi-browser-chrome text-muted fs-5 {% if fav_resolved %}d-none{% endif %}"></i>
+                                        </div>
+                                        <div class="small">
+                                            <span class="fw-semibold d-block">Generated Favicon (64px)</span>
+                                            <span class="text-muted" style="font-size: 0.75rem;">Strokes automatically thickened for browser tab visibility.</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-text mt-1">1:1 square crop. White background thresholded to transparent, black and white versions created.</div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Wordmark Slot (Free Aspect) -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Brand Wordmark <span class="badge bg-light text-dark border ms-1">Free Aspect</span></label>
+                                {% set wordmark_resolved = image_url(settings.brand_wordmark_black_url) if settings.brand_wordmark_black_url else (image_url(settings.org_logo_url) if settings.org_logo_url else None) %}
+                                {% set wordmark_white = image_url(settings.brand_wordmark_white_url) if settings.brand_wordmark_white_url else None %}
+                                <div class="image-upload-zone"
+                                     data-upload-url="{{ url_for('settings.upload_branding_image', image_type='brand_wordmark') }}"
+                                     data-remove-url="{{ url_for('settings.remove_branding_image', image_type='brand_wordmark') }}"
+                                     data-image-kind="brand_wordmark"
+                                     data-field-name="image"
+                                     data-allowed-exts="png,jpg,jpeg,webp"
+                                     data-max-size-mb="10.0"
+                                     data-confirm-remove="Are you sure you want to remove the brand wordmark?">
+                                    <div class="image-drop-area position-relative">
+                                        <div class="preview-box">
+                                            {% if wordmark_resolved %}
+                                            <img src="{{ wordmark_resolved }}" alt="Wordmark" class="preview-image">
+                                            <div class="preview-placeholder d-none text-center">
+                                                <i class="bi bi-card-heading fs-2 text-secondary mb-1"></i>
+                                                <div class="small text-secondary fw-medium">Drag wordmark here or click to browse</div>
+                                            </div>
+                                            {% else %}
+                                            <img src="" alt="Wordmark" class="preview-image d-none">
+                                            <div class="preview-placeholder text-center">
+                                                <i class="bi bi-card-heading fs-2 text-secondary mb-1"></i>
+                                                <div class="small text-secondary fw-medium">Drag wordmark here or click to browse</div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="upload-prompt">
+                                            <span class="d-block small text-secondary">Drag wide wordmark or click to browse (PNG line art &bull; Max 10MB)</span>
+                                        </div>
+
+                                        <!-- Hover Action Overlay -->
+                                        <div class="image-hover-overlay">
+                                            <button type="button" class="btn btn-sm btn-light btn-hover-change shadow-sm">
+                                                <i class="bi bi-arrow-repeat me-1"></i>Change
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger btn-hover-remove shadow-sm">
+                                                <i class="bi bi-trash3 me-1"></i>Remove
+                                            </button>
+                                        </div>
+
+                                        <!-- Determinate Progress Overlay -->
+                                        <div class="upload-progress-overlay d-none">
+                                            <div class="progress mb-2 w-100">
+                                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <div class="progress-label small fw-semibold text-secondary">Uploading... 0%</div>
+                                        </div>
+
+                                        <!-- Success Checkmark Badge -->
+                                        <div class="upload-success-badge d-none position-absolute" style="z-index: 14;">
+                                            <i class="bi bi-check-lg"></i> Uploaded
+                                        </div>
+
+                                        <!-- In-place Retry Box on Error -->
+                                        <div class="upload-retry-box d-none position-absolute" style="z-index: 15;">
+                                            <div class="retry-error-text small fw-semibold mb-2">Upload failed</div>
+                                            <button type="button" class="btn btn-sm btn-light text-danger fw-bold btn-retry-upload">
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Retry
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="file" name="brand_wordmark" class="image-upload-input d-none" accept=".png,.jpg,.jpeg,.webp">
+                                    <div class="d-flex align-items-center justify-content-between mt-2">
+                                        <div class="upload-feedback flex-grow-1 me-2">
+                                            <div class="upload-error-msg d-none"></div>
+                                            <div class="upload-success-msg d-none"></div>
+                                            <div class="stored-size-badge text-muted small mt-1"></div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-image {% if not wordmark_resolved %}d-none{% endif %}">
+                                            <i class="bi bi-trash3 me-1"></i>Remove
+                                        </button>
+                                    </div>
+                                    <!-- Contrast Preview Bar -->
+                                    <div class="d-flex align-items-center gap-2 mt-2 p-2 rounded border" style="background-color: #0f172a;">
+                                        <div class="small text-white-50 me-2" style="font-size: 0.75rem;">Dark Surface Preview:</div>
+                                        <img src="{{ wordmark_white or '' }}" alt="White Wordmark" class="preview-image-white {% if not wordmark_white %}d-none{% endif %}" style="height: 24px; width: auto; max-width: 140px; object-fit: contain;">
+                                        <span class="small text-white-50 {% if wordmark_white %}d-none{% endif %}">White version appears here on upload</span>
+                                    </div>
+                                    <div class="form-text mt-1">Free aspect ratio. Used on thermal receipt (black @ 72mm) and sidebar header (white or black based on contrast).</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Primary Theme Color</label>
+                                <div class="input-group">
+                                    <input type="color" class="form-control form-control-color" name="theme_color_primary" value="{{ settings.theme_color_primary }}">
+                                    <input type="text" class="form-control" value="{{ settings.theme_color_primary }}" readonly>
+                                </div>
+                                <div class="form-text">Primary header, buttons, and navigation highlight color.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Secondary Accent Color</label>
+                                <div class="input-group">
+                                    <input type="color" class="form-control form-control-color" name="theme_color_secondary" value="{{ settings.theme_color_secondary }}">
+                                    <input type="text" class="form-control" value="{{ settings.theme_color_secondary }}" readonly>
+                                </div>
+                                <div class="form-text">Accent badges, highlights, and secondary UI elements.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Store / Institutional Address</label>
+                                <input type="text" name="org_address" class="form-control" value="{{ settings.org_address }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Contact Phone Number</label>
+                                <input type="text" name="org_phone" class="form-control" value="{{ settings.org_phone }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Contact Email</label>
+                                <input type="email" name="org_email" class="form-control" value="{{ settings.org_email }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">National Tax Number (NTN)</label>
+                                <input type="text" name="org_ntn" class="form-control" value="{{ settings.org_ntn }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Sales Tax Reg. Number (STRN)</label>
+                                <input type="text" name="org_strn" class="form-control" value="{{ settings.org_strn }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Currency & Financial Defaults -->
+            <div class="tab-pane fade" id="financial" role="tabpanel">
+                <div class="card mb-4">
+                    <div class="card-header py-3 border-bottom">
+                        <h5 class="card-title mb-0 fw-bold" style="color: var(--text-primary);">Financial & Tax Preferences</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Currency Symbol</label>
+                                <input type="text" name="currency_symbol" class="form-control" value="{{ settings.currency_symbol }}">
+                                <div class="form-text">E.g., Rs., PKR, $</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Decimal Display Places</label>
+                                <select name="decimal_places" class="form-select">
+                                    <option value="0" {% if settings.decimal_places == 0 %}selected{% endif %}>0 (Whole numbers)</option>
+                                    <option value="2" {% if settings.decimal_places == 2 %}selected{% endif %}>2 (Standard - 0.00)</option>
+                                    <option value="3" {% if settings.decimal_places == 3 %}selected{% endif %}>3 (High precision - 0.000)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Thousand Separator</label>
+                                <select name="thousand_separator" class="form-select">
+                                    <option value="," {% if settings.thousand_separator == ',' %}selected{% endif %}>Comma (1,000.00)</option>
+                                    <option value="" {% if not settings.thousand_separator %}selected{% endif %}>None (1000.00)</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Default Sales Tax Rate (%)</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" min="0" max="100" name="default_tax_percent" class="form-control" value="{{ settings.default_tax_percent }}">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <div class="form-text">Applied automatically to newly created catalog items.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Cash Rounding Mode</label>
+                                <select name="cash_rounding_mode" class="form-select">
+                                    <option value="off" {% if settings.cash_rounding_mode == 'off' %}selected{% endif %}>Off (Exact decimal payable)</option>
+                                    <option value="nearest_1" {% if settings.cash_rounding_mode == 'nearest_1' %}selected{% endif %}>Round to Nearest 1 Rupee</option>
+                                    <option value="nearest_5" {% if settings.cash_rounding_mode == 'nearest_5' %}selected{% endif %}>Round to Nearest 5 Rupees</option>
+                                </select>
+                                <div class="form-text">Rounding differences are recorded in the 'round_off' invoice column.</div>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="tax_inclusive" value="1" id="taxInclusiveSwitch" {% if settings.tax_inclusive %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="taxInclusiveSwitch">Catalog Prices are Tax-Inclusive (Rule 5)</label>
+                                </div>
+                                <div class="form-text ms-4">When enabled, retail shelf prices include tax; taxable value is calculated backwards: <code>Taxable = Price / (1 + Tax%)</code>.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Invoicing & Sequencing -->
+            <div class="tab-pane fade" id="invoicing" role="tabpanel">
+                <div class="card mb-4">
+                    <div class="card-header py-3 border-bottom">
+                        <h5 class="card-title mb-0 fw-bold" style="color: var(--text-primary);">Invoice Numbering & Business Calendar</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Invoice Prefix</label>
+                                <input type="text" name="invoice_prefix" class="form-control" value="{{ settings.invoice_prefix }}">
+                                <div class="form-text">Prefix in document numbering (e.g. INV or ISI).</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Sequence Zero Padding</label>
+                                <input type="number" min="4" max="10" name="invoice_padding" class="form-control" value="{{ settings.invoice_padding }}">
+                                <div class="form-text">Number of digits (6 produces 000001).</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Sequence Reset Rule</label>
+                                <select name="invoice_reset_rule" class="form-select">
+                                    <option value="yearly" {% if settings.invoice_reset_rule == 'yearly' %}selected{% endif %}>Yearly (On Fiscal Year Start)</option>
+                                    <option value="never" {% if settings.invoice_reset_rule == 'never' %}selected{% endif %}>Continuous (Never reset)</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Fiscal Year Start (MM-DD)</label>
+                                <input type="text" name="fiscal_year_start" class="form-control" value="{{ settings.fiscal_year_start }}" placeholder="07-01">
+                                <div class="form-text">Pakistan fiscal year standard is 1 July (07-01).</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Business Day Cutoff (HH:MM)</label>
+                                <input type="text" name="business_day_cutoff" class="form-control" value="{{ settings.business_day_cutoff }}" placeholder="04:00">
+                                <div class="form-text">Transactions prior to this hour attribute to the prior business day.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Low Stock Warning Threshold</label>
+                                <input type="number" min="1" name="low_stock_threshold" class="form-control" value="{{ settings.low_stock_threshold }}">
+                                <div class="form-text">Default reorder trigger level for inventory items.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Receipts & Hardware -->
+            <div class="tab-pane fade" id="hardware" role="tabpanel">
+                <div class="card mb-4">
+                    <div class="card-header py-3 border-bottom">
+                        <h5 class="card-title mb-0 fw-bold" style="color: var(--text-primary);">Thermal Receipt Printing & Compliance</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Receipt Header Text</label>
+                                <textarea name="receipt_header" class="form-control" rows="2">{{ settings.receipt_header }}</textarea>
+                                <div class="form-text">Appears directly beneath the store name on printed slips.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Receipt Footer Text</label>
+                                <textarea name="receipt_footer" class="form-control" rows="2">{{ settings.receipt_footer }}</textarea>
+                                <div class="form-text">Printed at the bottom of customer receipts.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Exchange & Return Policy Note</label>
+                                <input type="text" name="return_policy" class="form-control" value="{{ settings.return_policy }}">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Receipt Paper Width</label>
+                                <select name="receipt_paper_size" class="form-select">
+                                    <option value="80mm" {% if settings.receipt_paper_size == '80mm' %}selected{% endif %}>80mm (Standard POS - 48 chars)</option>
+                                    <option value="58mm" {% if settings.receipt_paper_size == '58mm' %}selected{% endif %}>58mm (Compact POS - 32 chars)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">POS Terminal Registration No.</label>
+                                <input type="text" name="pos_reg_no" class="form-control" value="{{ settings.pos_reg_no }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">FBR Tier-1 Fiscalization</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" name="fbr_enabled" value="1" id="fbrEnabledSwitch" {% if settings.fbr_enabled %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="fbrEnabledSwitch">Enable FBR Integration</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mt-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="print_logo_on_receipt" value="1" id="printLogoSwitch" {% if settings.print_logo_on_receipt %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="printLogoSwitch">Print logo on receipt</label>
+                                    <div class="form-text">Controls whether the organization logo appears on printed receipts and receipt modals. Default is Off.</div>
+                                </div>
+                            </div>
+                        </div>
+                </div>
+
+                <!-- Daily Backup & USB Replication -->
+                <div class="card mb-4">
+                    <div class="card-header py-3 border-bottom">
+                        <h5 class="card-title mb-0 fw-bold" style="color: var(--text-primary);"><i class="bi bi-usb-drive me-2"></i>Automated Daily Backup & USB Drive Replication</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">USB Backup Drive Letter</label>
+                                <input type="text" name="backup_usb_drive" class="form-control" placeholder="E:" value="{{ settings.backup_usb_drive|default('') }}" maxlength="2">
+                                <div class="form-text">Drive letter of USB flash drive for automated offsite replication (e.g. <code>E:</code> or <code>D:</code>). When connected, daily backups are automatically copied to <code>&lt;Drive&gt;:\NoventraPOS_Backups\</code>.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% include "common/cropper_modal.html" %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/cropper/cropper.min.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='vendor/cropper/cropper.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/image_uploader.js') }}"></script>
+{% endblock %}

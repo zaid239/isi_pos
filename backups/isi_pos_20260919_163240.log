@@ -1,0 +1,41 @@
+;;; ============================================================
+;;; Oracle Database Logical Export
+;;; Schema: ISI | Service: orclpdb1 | Time: 2026-09-19T16:32:40.864561
+;;; Character Set: AL32UTF8
+;;; ============================================================
+. . exported "ISI"."ALEMBIC_VERSION"                1 rows
+. . exported "ISI"."AUDIT_LOGS"                0 rows
+. . exported "ISI"."CATEGORIES"                0 rows
+. . exported "ISI"."CUSTOMERS"                0 rows
+. . exported "ISI"."DOC_COUNTERS"                0 rows
+. . exported "ISI"."EXPENSES"                0 rows
+. . exported "ISI"."EXPENSE_HEADS"                0 rows
+. . exported "ISI"."HELD_BILLS"                0 rows
+. . exported "ISI"."INVOICES"                0 rows
+. . exported "ISI"."INVOICE_ITEMS"                0 rows
+. . exported "ISI"."INVOICE_PAYMENTS"                0 rows
+. . exported "ISI"."ITEMS"                0 rows
+. . exported "ISI"."ITEM_IMAGES"                0 rows
+. . exported "ISI"."LOGIN_HISTORY"                0 rows
+. . exported "ISI"."PAYMENT_MODES"                0 rows
+. . exported "ISI"."PAYMENT_TRANSACTIONS"                0 rows
+. . exported "ISI"."PRINT_JOBS"                0 rows
+. . exported "ISI"."PURCHASES"                0 rows
+. . exported "ISI"."PURCHASE_ITEMS"                0 rows
+. . exported "ISI"."ROLES"                0 rows
+. . exported "ISI"."SALES_RETURNS"                0 rows
+. . exported "ISI"."SALES_RETURN_ITEMS"                0 rows
+. . exported "ISI"."SETTINGS"                0 rows
+. . exported "ISI"."SHIFTS"                0 rows
+. . exported "ISI"."STOCK_ADJUSTMENTS"                0 rows
+. . exported "ISI"."STOCK_MOVEMENTS"                0 rows
+. . exported "ISI"."SUPPLIERS"                0 rows
+. . exported "ISI"."SYNC_BATCHES"                0 rows
+. . exported "ISI"."SYNC_OUTBOX"                0 rows
+. . exported "ISI"."UNITS"                0 rows
+. . exported "ISI"."USERS"                0 rows
+;;; ------------------------------------------------------------
+Master export for schema "ISI" successfully completed.
+Total tables exported: 31
+Total rows exported:   1
+Job completed with 0 errors and 0 warnings.

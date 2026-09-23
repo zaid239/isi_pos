@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Log In{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body p-4 p-sm-5">
+                <div class="text-center mb-4">
+                    <div class="brand-branding mb-3 d-flex flex-column align-items-center justify-content-center">
+                        {% set icon_black = image_url(app_settings.brand_icon_black_url) if app_settings and app_settings.brand_icon_black_url else None %}
+                        {% set wordmark_black = image_url(app_settings.brand_wordmark_black_url) if app_settings and app_settings.brand_wordmark_black_url else (image_url(app_settings.org_logo_url) if app_settings and app_settings.org_logo_url and app_settings.org_logo_url != '/static/images/default-logo.png' else None) %}
+                        
+                        {% if icon_black %}
+                        <img src="{{ icon_black }}" alt="Icon" class="mb-2" style="height: 64px; width: 64px; object-fit: contain;">
+                        {% elif not wordmark_black %}
+                        <i class="bi bi-shield-lock-fill mb-2" style="font-size: 2.5rem; color: var(--accent);"></i>
+                        {% endif %}
+
+                        {% if wordmark_black %}
+                        <img src="{{ wordmark_black }}" alt="{{ org_name_en }}" class="mb-1" style="max-height: 48px; max-width: 220px; width: auto; object-fit: contain;">
+                        {% else %}
+                        <h4 class="fw-bold mb-1" style="color: var(--text-primary);">{{ org_name_en }}</h4>
+                        {% endif %}
+                    </div>
+                    <p class="text-secondary small mb-0">Point of Sale & Inventory Authentication</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="username">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), id="username", autofocus=True, placeholder="Enter username") }}
+                        </div>
+                        {% for err in form.username.errors %}
+                        <div class="invalid-feedback d-block">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="password">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-key"></i></span>
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), id="password", placeholder="Enter password") }}
+                        </div>
+                        {% for err in form.password.errors %}
+                        <div class="invalid-feedback d-block">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-4 form-check">
+                        {{ form.remember(class="form-check-input", id="remember") }}
+                        <label class="form-check-label text-muted" for="remember">Remember me on this terminal</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to POS
+                    </button>
+                </form>
+
+                <div class="text-center mt-4 text-muted small">
+                    <span>Terminal Mode: <strong>Offline-First LAN</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

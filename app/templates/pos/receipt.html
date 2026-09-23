@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt #{{ receipt.invoice_no }} - {{ receipt.org_name_en }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
+    <style>
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+        body {
+            background-color: #f1f5f9;
+            font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+            font-size: 13px;
+            color: #000 !important;
+            padding: 20px;
+            margin: 0;
+        }
+        .receipt-card {
+            width: 72mm;
+            max-width: 72mm;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 2mm;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            color: #000 !important;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+        .receipt-card * {
+            color: #000 !important;
+            font-weight: 500;
+        }
+        .receipt-card strong,
+        .receipt-card th,
+        .receipt-card b,
+        .receipt-card .fw-bold,
+        .receipt-card .receipt-label,
+        .receipt-card .receipt-total {
+            font-weight: 700 !important;
+        }
+        .receipt-divider {
+            border-bottom: 1px solid #000 !important;
+            margin: 4px 0;
+        }
+        .receipt-divider-top {
+            border-top: 1px solid #000 !important;
+            margin: 4px 0;
+        }
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+                margin: 0;
+                font-size: 13px;
+            }
+            .receipt-card {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 72mm;
+                max-width: 72mm;
+                box-shadow: none;
+                padding: 0 2mm;
+                margin: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print text-center mb-3">
+        <a href="{{ url_for('pos.index') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left me-1"></i>Back to POS
+        </a>
+        <button onclick="window.print()" class="btn btn-sm btn-primary">
+            <i class="bi bi-printer me-1"></i>Print Receipt
+        </button>
+    </div>
+
+    <div class="receipt-card">
+        <!-- Header & Branding -->
+        <div class="text-center pb-2 receipt-divider mb-2">
+            {% set wordmark_img = receipt.brand_wordmark_black_url or receipt.org_logo_url %}
+            {% if receipt.print_logo_on_receipt and wordmark_img and wordmark_img.strip() %}
+            <img src="{{ wordmark_img.strip() }}" alt="{{ receipt.org_name_en }}" style="width: 72mm; max-width: 100%; height: auto; object-fit: contain; margin: 0 auto 4px auto; display: block;">
+            {% else %}
+            <div style="font-size: 16px; font-weight: 700; margin-bottom: 2px;">{{ receipt.org_name_en }}</div>
+            {% endif %}
+            {% if receipt.org_address %}
+            <div style="font-size: 12px;">{{ receipt.org_address }}</div>
+            {% endif %}
+            {% if receipt.org_phone %}
+            <div style="font-size: 12px;">Tel: {{ receipt.org_phone }}</div>
+            {% endif %}
+            {% if receipt.org_ntn %}
+            <div style="font-size: 12px;">NTN: {{ receipt.org_ntn }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Meta Information -->
+        <div class="mb-2 pb-2 receipt-divider" style="font-size: 12px;">
+            <div class="d-flex justify-content-between">
+                <span>Invoice #:</span>
+                <strong>{{ receipt.invoice_no }}</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>Date/Time:</span>
+                <span>{{ receipt.invoice_date_formatted }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>Terminal / Counter:</span>
+                <span>{{ receipt.terminal_code }} / {{ receipt.counter_code }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>Cashier:</span>
+                <span>{{ receipt.cashier_name }}</span>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px; border-bottom: 1px solid #000;">
+            <thead>
+                <tr style="border-bottom: 1px solid #000; font-size: 12px;">
+                    <th style="text-align: left; padding: 2px 0; font-weight: 700;">Item</th>
+                    <th style="text-align: right; padding: 2px 0; font-weight: 700;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for it in receipt['items'] %}
+                {% set tax_pct = it.tax_percent if it.tax_percent is defined else (it.tax_pct if it.tax_pct is defined else 0) %}
+                <tr style="font-size: 12px;">
+                    <td style="padding: 3px 0; vertical-align: top;">
+                        <div style="font-weight: 700;">{{ it.item_name }}</div>
+                        <div style="font-size: 12px;">{{ it.quantity }} x {{ "%.2f"|format(it.unit_price) }} (GST {{ tax_pct }}%)</div>
+                    </td>
+                    <td style="text-align: right; padding: 3px 0; vertical-align: top; white-space: nowrap; font-weight: 500;">
+                        {{ "%.2f"|format(it.line_total) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Remarks (escaped, under item lines) -->
+        {% if receipt.remarks and receipt.remarks.strip() %}
+        <div class="mb-2 pb-2 receipt-divider" style="font-size: 12px; word-break: break-word; white-space: pre-wrap;">
+            <strong>Remarks:</strong> {{ receipt.remarks|e }}
+        </div>
+        {% endif %}
+
+        <!-- Totals & Taxes -->
+        <div class="mb-2 pb-1" style="font-size: 13px;">
+            <div class="d-flex justify-content-between">
+                <span>Subtotal:</span>
+                <span>{{ format_money(receipt.subtotal) }}</span>
+            </div>
+            {% if receipt.discount_amount and receipt.discount_amount > 0 %}
+            <div class="d-flex justify-content-between">
+                <span>Discount ({{ receipt.discount_rate or 0 }}%):</span>
+                <span>-{{ format_money(receipt.discount_amount) }}</span>
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between">
+                <span>Tax (GST):</span>
+                <span>{{ format_money(receipt.tax_amount) }}</span>
+            </div>
+            {% if receipt.round_off != 0 %}
+            <div class="d-flex justify-content-between">
+                <span>Round Off:</span>
+                <span>{{ format_money(receipt.round_off) }}</span>
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between receipt-total receipt-divider-top receipt-divider py-1 my-1" style="font-size: 14px; font-weight: 700;">
+                <span style="font-weight: 700;">Grand Total:</span>
+                <span style="font-weight: 700;">{{ format_money(receipt.payable_amount) }}</span>
+            </div>
+        </div>
+
+        <!-- Payments -->
+        <div class="mb-2 pb-2 receipt-divider" style="font-size: 12px;">
+            {% for p in receipt['payments'] %}
+            <div class="d-flex justify-content-between">
+                <span>
+                    <strong>{{ p.mode_name or p.mode_code }}</strong>{% if p.card_last4 %} (Ending {{ p.card_last4 }}){% endif %}{% if p.reference or p.terminal_ref %} (Ref: {{ p.reference or p.terminal_ref }}){% endif %}:
+                </span>
+                <strong>{{ format_money(p.amount) }}</strong>
+            </div>
+            {% if p.mode_code == 'cash' and (p.tendered_amt > p.amount or p.change_amt > 0) %}
+            <div class="d-flex justify-content-between ps-2">
+                <span>Tendered:</span>
+                <span>{{ format_money(p.tendered_amt) }}</span>
+            </div>
+            <div class="d-flex justify-content-between ps-2">
+                <span>Change:</span>
+                <span>{{ format_money(p.change_amt) }}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% if receipt.change_amount > 0 and not (receipt['payments']|selectattr('mode_code', 'equalto', 'cash')|list) %}
+            <div class="d-flex justify-content-between">
+                <span>Change:</span>
+                <span>{{ format_money(receipt.change_amount) }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-2" style="font-size: 12px;">
+            {% if receipt.receipt_footer %}
+            <div>{{ receipt.receipt_footer }}</div>
+            {% endif %}
+            <div class="mt-1" style="font-size: 11px;">Powered by Noventra POS</div>
+        </div>
+    </div>
+</body>
+</html>

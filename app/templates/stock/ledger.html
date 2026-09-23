@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Ledger: {{ item.item_name }} - Noventra POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb small mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('stock.index') }}">Stock</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Item Ledger</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0 fw-bold" style="color: var(--text-primary);">{{ item.item_name }}</h1>
+            <div class="text-secondary small mt-1">
+                <span class="font-monospace fw-semibold">SKU: {{ item.sku }}</span>
+                {% if item.barcode %}&bull; <span class="font-monospace">Barcode: {{ item.barcode }}</span>{% endif %}
+                {% if item.category %}&bull; <span>Category: {{ item.category.cat_name }}</span>{% endif %}
+                &bull; <span>Unit: {{ item.unit.unit_name if item.unit else 'pcs' }}</span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('stock.index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Stock List
+            </a>
+            <a href="{{ url_for('stock.stock_in') }}" class="btn btn-primary">
+                <i class="bi bi-box-arrow-in-down me-1"></i>Stock In
+            </a>
+            <a href="{{ url_for('stock.adjustment', item_id=item.id) }}" class="btn btn-warning text-dark">
+                <i class="bi bi-sliders me-1"></i>Adjust Count
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-3">
+                    <span class="text-secondary small fw-medium">Opening Balance</span>
+                    <h4 class="mb-0 fw-bold font-monospace mt-1 text-secondary">
+                        {{ "%.3f"|format(opening_balance) }} <span class="small fw-normal text-muted">{{ item.unit.unit_code if item.unit else '' }}</span>
+                    </h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-3">
+                    <span class="text-secondary small fw-medium">Total In (+)</span>
+                    <h4 class="mb-0 fw-bold font-monospace mt-1 text-success">
+                        +{{ "%.3f"|format(total_in) }} <span class="small fw-normal text-muted">{{ item.unit.unit_code if item.unit else '' }}</span>
+                    </h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-3">
+                    <span class="text-secondary small fw-medium">Total Out (&minus;)</span>
+                    <h4 class="mb-0 fw-bold font-monospace mt-1 text-danger">
+                        -{{ "%.3f"|format(total_out) }} <span class="small fw-normal text-muted">{{ item.unit.unit_code if item.unit else '' }}</span>
+                    </h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-3">
+                    <span class="text-secondary small fw-medium">Closing / Current Stock</span>
+                    <h4 class="mb-0 fw-bold font-monospace mt-1" style="color: var(--text-primary);">
+                        {{ "%.3f"|format(closing_balance) }} <span class="small fw-normal text-muted">{{ item.unit.unit_code if item.unit else '' }}</span>
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ url_for('stock.ledger', item_id=item.id) }}" class="row g-2 align-items-center">
+                <div class="col-12 col-sm-4 col-md-3">
+                    <label class="form-label small fw-semibold mb-1">From Date</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+                </div>
+                <div class="col-12 col-sm-4 col-md-3">
+                    <label class="form-label small fw-semibold mb-1">To Date</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+                </div>
+                <div class="col-12 col-sm-4 col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-filter me-1"></i>Filter Ledger
+                    </button>
+                    {% if date_from or date_to %}
+                    <a href="{{ url_for('stock.ledger', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chronological Ledger Table -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3" style="width: 170px;">Date &amp; Time (PKT)</th>
+                        <th>Movement Type</th>
+                        <th>Doc Reference</th>
+                        <th>User</th>
+                        <th class="text-end text-success" style="width: 120px;">Qty In (+)</th>
+                        <th class="text-end text-danger" style="width: 120px;">Qty Out (&minus;)</th>
+                        <th class="text-end" style="width: 140px;">Running Balance</th>
+                        <th class="text-end" style="width: 120px;">Unit Cost</th>
+                        <th class="pe-3">Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr class="{% if row.is_opening %}table-light fw-semibold{% endif %}">
+                        <td class="ps-3 text-secondary font-sans-serif">
+                            {% if row.datetime %}
+                            {{ row.datetime|pkt_time('%Y-%m-%d %I:%M %p') }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {{ row.badge_class }}">{{ row.movement_type }}</span>
+                        </td>
+                        <td class="text-secondary font-monospace">{{ row.ref_doc }}</td>
+                        <td class="text-secondary font-sans-serif">{{ row.user_name }}</td>
+                        <td class="text-end text-success">
+                            {% if row.qty_in > 0 %}
+                            +{{ "%.3f"|format(row.qty_in) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="text-end text-danger">
+                            {% if row.qty_out > 0 %}
+                            -{{ "%.3f"|format(row.qty_out) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold font-monospace" style="color: var(--text-primary);">
+                            {{ "%.3f"|format(row.balance) }}
+                        </td>
+                        <td class="text-end font-monospace text-secondary">
+                            {% if row.unit_cost is not none %}
+                            {{ format_money(row.unit_cost) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="pe-3 text-secondary font-sans-serif small text-truncate" style="max-width: 260px;" title="{{ row.notes }}">
+                            {{ row.notes or '-' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-light py-3 small text-secondary d-flex align-items-center justify-content-between">
+            <div>
+                <i class="bi bi-calculator me-1"></i>
+                Ledger reconciles automatically from baseline opening balance down to current stock on hand (<strong>{{ "%.3f"|format(closing_balance) }} {{ item.unit.unit_code if item.unit else '' }}</strong>).
+            </div>
+            <div>
+                Total Movements: {{ rows|length - 1 }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

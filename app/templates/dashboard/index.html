@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2 py-3">
+    <!-- Top Header: 24px Medium Weight Title & Dense Operational Context -->
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3 pb-2 border-bottom" style="border-color: var(--border) !important;">
+        <div>
+            <h1 class="dashboard-page-title mb-1">Dashboard</h1>
+            <div class="dashboard-context-bar d-flex flex-wrap align-items-center gap-2">
+                <span>Terminal <strong style="color: var(--text-primary);">{{ terminal_code }}</strong></span>
+                <span>&middot;</span>
+                <span>Counter <strong style="color: var(--text-primary);">{{ counter_code }}</strong></span>
+                <span>&middot;</span>
+                <span>User: <strong style="color: var(--text-primary);">{{ current_user.full_name }}</strong> ({{ current_user.role_code|title }})</span>
+                {% if current_business_date %}
+                <span>&middot;</span>
+                <span>Business Date: <strong style="color: var(--text-primary);">{{ current_business_date }}</strong></span>
+                {% endif %}
+                {% if backup_status %}
+                <span>&middot;</span>
+                <span class="d-inline-flex align-items-center gap-1 {% if backup_status.is_critical %}text-danger fw-bold{% else %}text-secondary{% endif %}" title="{{ backup_status.message }}">
+                    <i class="bi bi-shield-fill-check {% if backup_status.is_critical %}text-danger{% else %}text-success{% endif %}"></i>
+                    <span>Last backup: <strong class="{% if backup_status.is_critical %}text-danger{% else %}text-dark{% endif %}">{{ backup_status.label }}</strong></span>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <a href="{{ url_for('pos.index') }}" class="btn btn-accent px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm" style="background-color: var(--accent) !important; border-color: var(--accent) !important; color: #ffffff !important; font-size: 0.88rem;">
+                <i class="bi bi-calculator"></i>
+                <span>Open POS Terminal</span>
+                <span class="badge ms-1" style="background-color: rgba(255, 255, 255, 0.2); color: #ffffff; font-size: 0.75rem; font-weight: 500;">F2</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Four Metric Cards in Order: Today's Sales, Today's Orders, Average Order Value, Low Stock Items -->
+    <div class="dashboard-metrics-grid mb-3">
+        <!-- 1. Today's Sales -->
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="metric-label">Today's Sales</span>
+                <i class="bi bi-cash-stack metric-icon"></i>
+            </div>
+            <div class="metric-value text-nowrap">
+                <span style="white-space: nowrap !important;">{{ format_money(metrics.today_sales) }}</span>
+            </div>
+            <div class="metric-subtext">
+                {% if metrics.today_orders_count > 0 %}
+                {{ metrics.today_orders_count }} order{% if metrics.today_orders_count != 1 %}s{% endif %} today
+                {% else %}
+                No orders recorded yet
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 2. Today's Orders -->
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="metric-label">Today's Orders</span>
+                <i class="bi bi-receipt-cutoff metric-icon"></i>
+            </div>
+            <div class="metric-value">{{ metrics.today_orders_count }}</div>
+            <div class="metric-subtext">Completed invoices today</div>
+        </div>
+
+        <!-- 3. Average Order Value -->
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="metric-label">Average Order Value</span>
+                <i class="bi bi-graph-up-arrow metric-icon"></i>
+            </div>
+            <div class="metric-value text-nowrap">
+                <span style="white-space: nowrap !important;">{{ format_money(metrics.average_order_value) }}</span>
+            </div>
+            <div class="metric-subtext">Per completed transaction</div>
+        </div>
+
+        <!-- 4. Low Stock Items -->
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="metric-label">Low Stock Items</span>
+                <i class="bi bi-exclamation-triangle metric-icon {% if metrics.low_stock_count > 0 %}text-danger{% endif %}"></i>
+            </div>
+            <div class="metric-value {% if metrics.low_stock_count > 0 %}text-danger{% endif %}">{{ metrics.low_stock_count }}</div>
+            <div class="metric-subtext">
+                {% if metrics.low_stock_count > 0 %}
+                <a href="{{ url_for('items.index', stock='low_stock') }}" class="text-danger fw-semibold text-decoration-none">
+                    Needs reorder &rarr;
+                </a>
+                {% else %}
+                <span class="text-secondary">Stock levels healthy</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle Row: Sales Trend with Period Selector (2/3 width) and Top Sellers (1/3 width) -->
+    <div class="row g-3 mb-3">
+        <!-- Sales Line Chart with Period Selector -->
+        <div class="col-lg-8">
+            <div class="dashboard-panel h-100 d-flex flex-column">
+                <div class="panel-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div>
+                        <h2 class="panel-title" id="chartPanelTitle">{{ chart_data.period_title|default('Last 7 days') }}</h2>
+                        <span class="panel-subtitle">Revenue trend by business day</span>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <!-- Period Selector -->
+                        <div class="btn-group btn-group-sm" role="group" id="periodBtnGroup">
+                            <button type="button" class="btn btn-outline-secondary period-btn py-1 px-2 {% if chart_data.period == 'today' %}active{% endif %}" data-period="today">Today</button>
+                            <button type="button" class="btn btn-outline-secondary period-btn py-1 px-2 {% if chart_data.period == '7d' or not chart_data.period %}active{% endif %}" data-period="7d">7 Days</button>
+                            <button type="button" class="btn btn-outline-secondary period-btn py-1 px-2 {% if chart_data.period == '30d' %}active{% endif %}" data-period="30d">30 Days</button>
+                            <button type="button" class="btn btn-outline-secondary period-btn py-1 px-2 {% if chart_data.period == '90d' %}active{% endif %}" data-period="90d">90 Days</button>
+                            <button type="button" class="btn btn-outline-secondary period-btn py-1 px-2 {% if chart_data.period == 'custom' %}active{% endif %}" data-period="custom" id="customPeriodBtn">Custom</button>
+                        </div>
+
+                        <span class="badge px-2 py-1" id="chartTotalBadge" style="background-color: var(--bg-subtle); color: var(--text-primary); border: 1px solid var(--border); font-size: 0.75rem; white-space: nowrap;">
+                            Total: {{ chart_data.total_sales_formatted|default(format_money(chart_data.total_sales)) }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Collapsible Custom Date Range Form -->
+                <div id="customDateRangeBar" class="px-3 py-2 border-bottom {% if chart_data.period != 'custom' %}d-none{% endif %}" style="background-color: var(--bg-subtle); border-color: var(--border) !important;">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="d-flex align-items-center gap-1">
+                            <label for="customStartDate" class="small text-secondary fw-semibold mb-0" style="font-size: 0.75rem;">From:</label>
+                            <input type="date" id="customStartDate" class="form-control form-control-sm py-0" style="max-width: 140px; font-size: 0.8rem;" value="{{ chart_data.start_date|default('') }}">
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <label for="customEndDate" class="small text-secondary fw-semibold mb-0" style="font-size: 0.75rem;">To:</label>
+                            <input type="date" id="customEndDate" class="form-control form-control-sm py-0" style="max-width: 140px; font-size: 0.8rem;" value="{{ chart_data.end_date|default('') }}">
+                        </div>
+                        <button type="button" id="applyCustomDateBtn" class="btn btn-sm text-white py-0 px-2 fw-semibold" style="font-size: 0.78rem; background-color: var(--accent); border-color: var(--accent);">Apply</button>
+                    </div>
+                </div>
+
+                <div class="panel-body flex-grow-1 d-flex flex-column justify-content-center p-3">
+                    <div id="chartCanvasContainer" style="position: relative; height: 210px; width: 100%; {% if not chart_data.has_data %}display: none;{% endif %}">
+                        <canvas id="salesTrendChart"></canvas>
+                    </div>
+                    <div id="chartEmptyState" class="dashboard-empty-state py-4 {% if chart_data.has_data %}d-none{% endif %}">
+                        <i class="bi bi-graph-up text-secondary fs-3 mb-2 opacity-50"></i>
+                        <p class="mb-1 fw-medium" style="color: var(--text-primary); font-size: 0.9rem;">No sales recorded in this period</p>
+                        <span class="small text-secondary">Completed orders in this date range will automatically populate this sales line chart.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Sellers Following Selected Period -->
+        <div class="col-lg-4">
+            <div class="dashboard-panel h-100 d-flex flex-column">
+                <div class="panel-header d-flex align-items-center justify-content-between">
+                    <div>
+                        <h2 class="panel-title" id="topSellersHeaderTitle">Top Sellers Today</h2>
+                        <span class="panel-subtitle">Ranked by items sold</span>
+                    </div>
+                    <i class="bi bi-trophy text-secondary opacity-75"></i>
+                </div>
+                <div class="panel-body p-0 flex-grow-1 d-flex flex-column" id="topSellersContainer">
+                    {% if top_sellers %}
+                    <div class="list-group list-group-flush flex-grow-1" id="topSellersList">
+                        {% for item in top_sellers %}
+                        <div class="list-group-item d-flex align-items-center justify-content-between px-3 py-2 border-bottom" style="border-color: var(--border) !important; background: transparent;">
+                            <div class="d-flex align-items-center gap-2 overflow-hidden me-2">
+                                <span class="rank-badge">{{ loop.index }}</span>
+                                <div class="text-truncate">
+                                    <div class="fw-medium text-truncate" style="color: var(--text-primary); font-size: 0.85rem;" title="{{ item.name }}">{{ item.name }}</div>
+                                    <div class="small text-secondary font-monospace" style="font-size: 0.72rem;">{{ item.sku }}</div>
+                                </div>
+                            </div>
+                            <div class="text-end ps-2 text-nowrap">
+                                <span class="fw-bold" style="color: var(--accent); font-size: 0.9rem;">
+                                    {{ item.quantity|int if (item.quantity % 1 == 0) else item.quantity }}
+                                </span>
+                                <span class="small text-secondary" style="font-size: 0.75rem;">sold</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="dashboard-empty-state my-auto py-4" id="topSellersEmpty">
+                        <i class="bi bi-cup-hot text-secondary fs-3 mb-2 opacity-50"></i>
+                        <p class="mb-1 fw-medium" style="color: var(--text-primary); font-size: 0.9rem;">No sales in this period</p>
+                        <span class="small text-secondary">Best-selling items in this period will be ranked here.</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Recent Orders (Full Width Table) -->
+    <div class="dashboard-panel">
+        <div class="panel-header d-flex align-items-center justify-content-between">
+            <div>
+                <h2 class="panel-title">Recent Orders</h2>
+                <span class="panel-subtitle">Last 10 completed invoices</span>
+            </div>
+            {% if recent_orders %}
+            <span class="badge px-2 py-1" style="background-color: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--border); font-size: 0.75rem;">
+                Showing {{ recent_orders|length }}
+            </span>
+            {% endif %}
+        </div>
+        <div class="panel-body p-0">
+            {% if recent_orders %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 dashboard-table">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Invoice #</th>
+                            <th>Time</th>
+                            <th>Items</th>
+                            <th>Payment</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-end pe-3">Receipt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td class="ps-3 font-monospace">
+                                <a href="{{ url_for('pos.receipt', invoice_id=order.id) }}" class="fw-semibold text-decoration-none" style="color: var(--accent);">
+                                    {{ order.invoice_no }}
+                                </a>
+                            </td>
+                            <td class="small text-secondary">{{ order.formatted_time }}</td>
+                            <td class="small">{{ order.item_count }} item{% if order.item_count != 1 %}s{% endif %}</td>
+                            <td>
+                                <span class="payment-badge-subtle">
+                                    {{ order.payment_method }}
+                                </span>
+                            </td>
+                            <td class="text-end fw-bold text-nowrap" style="color: var(--text-primary);">
+                                <span style="white-space: nowrap !important;">{{ format_money(order.payable_amount) }}</span>
+                            </td>
+                            <td class="text-end pe-3">
+                                <a href="{{ url_for('pos.receipt', invoice_id=order.id) }}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.78rem;" title="View Receipt">
+                                    <i class="bi bi-receipt me-1"></i>View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="dashboard-empty-state py-4">
+                <i class="bi bi-receipt text-secondary fs-3 mb-2 opacity-50"></i>
+                <p class="mb-1 fw-medium" style="color: var(--text-primary); font-size: 0.9rem;">No orders recorded yet</p>
+                <span class="small text-secondary mb-2">Completed transactions from the POS counter will appear here.</span>
+                <div>
+                    <a href="{{ url_for('pos.index') }}" class="btn btn-sm btn-accent mt-2">
+                        <i class="bi bi-plus-lg me-1"></i>Start Sale
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const canvas = document.getElementById("salesTrendChart");
+    const chartContainer = document.getElementById("chartCanvasContainer");
+    const chartEmptyState = document.getElementById("chartEmptyState");
+    const chartPanelTitle = document.getElementById("chartPanelTitle");
+    const chartTotalBadge = document.getElementById("chartTotalBadge");
+    const topSellersHeaderTitle = document.getElementById("topSellersHeaderTitle");
+    const topSellersContainer = document.getElementById("topSellersContainer");
+    const customDateRangeBar = document.getElementById("customDateRangeBar");
+    const customStartDate = document.getElementById("customStartDate");
+    const customEndDate = document.getElementById("customEndDate");
+    const applyCustomDateBtn = document.getElementById("applyCustomDateBtn");
+    const periodButtons = document.querySelectorAll(".period-btn");
+
+    let chartInstance = null;
+    const initialLabels = {{ chart_data['labels'] | tojson }};
+    const initialValues = {{ chart_data['sales_values'] | tojson }};
+    const sym = window.CURRENCY_SYMBOL || "Rs.";
+
+    function initChart(labels, values) {
+        if (!canvas) return;
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+
+        const ctx = canvas.getContext("2d");
+        chartInstance = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Sales (" + sym + ")",
+                    data: values,
+                    borderColor: "#2563eb",
+                    backgroundColor: "rgba(37, 99, 235, 0.08)",
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: labels.length > 31 ? 1.5 : 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: "#2563eb",
+                    pointBorderColor: "#FFFFFF",
+                    pointBorderWidth: 1.5,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: "index"
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: "#0f172a",
+                        titleColor: "#FFFFFF",
+                        bodyColor: "#f8fafc",
+                        borderColor: "#334155",
+                        borderWidth: 1,
+                        padding: 8,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return window.formatMoney(context.parsed.y, sym);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: "#64748b",
+                            font: { size: 11, family: "'Segoe UI', sans-serif" },
+                            maxTicksLimit: labels.length > 31 ? 10 : 14,
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: "rgba(226, 232, 240, 0.8)", drawBorder: false },
+                        ticks: {
+                            color: "#64748b",
+                            font: { size: 11, family: "'Segoe UI', sans-serif" },
+                            callback: function(val) {
+                                return sym + " " + val.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    if (canvas && initialLabels && initialLabels.length > 0) {
+        initChart(initialLabels, initialValues);
+    }
+
+    function renderTopSellers(sellers) {
+        if (!topSellersContainer) return;
+        if (!sellers || sellers.length === 0) {
+            topSellersContainer.innerHTML = `
+                <div class="dashboard-empty-state my-auto py-4" id="topSellersEmpty">
+                    <i class="bi bi-inbox text-secondary fs-3 mb-2 opacity-50"></i>
+                    <p class="mb-1 fw-medium" style="color: var(--text-primary); font-size: 0.9rem;">No sales in this period</p>
+                    <span class="small text-secondary">Best-selling items in this period will be ranked here.</span>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="list-group list-group-flush flex-grow-1" id="topSellersList">';
+        sellers.forEach((item, idx) => {
+            const qtyStr = (item.quantity % 1 === 0) ? parseInt(item.quantity, 10) : item.quantity;
+            html += `
+                <div class="list-group-item d-flex align-items-center justify-content-between px-3 py-2 border-bottom" style="border-color: var(--border) !important; background: transparent;">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden me-2">
+                        <span class="rank-badge">${idx + 1}</span>
+                        <div class="text-truncate">
+                            <div class="fw-medium text-truncate" style="color: var(--text-primary); font-size: 0.85rem;" title="${item.name}">${item.name}</div>
+                            <div class="small text-secondary font-monospace" style="font-size: 0.72rem;">${item.sku}</div>
+                        </div>
+                    </div>
+                    <div class="text-end ps-2 text-nowrap">
+                        <span class="fw-bold" style="color: var(--accent); font-size: 0.9rem;">${qtyStr}</span>
+                        <span class="small text-secondary" style="font-size: 0.75rem;">sold</span>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        topSellersContainer.innerHTML = html;
+    }
+
+    function fetchPeriodData(period, startDate, endDate) {
+        let url = `/dashboard/api/chart-data?period=${encodeURIComponent(period)}`;
+        if (period === 'custom' && startDate && endDate) {
+            url += `&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+        }
+
+        fetch(url)
+            .then(res => res.json())
+            .then(payload => {
+                if (!payload.success || !payload.data) {
+                    console.error("Failed to load period data:", payload);
+                    return;
+                }
+                const data = payload.data;
+                if (chartPanelTitle) chartPanelTitle.textContent = data.period_title;
+                if (chartTotalBadge) chartTotalBadge.textContent = "Total: " + data.total_sales_formatted;
+                if (topSellersHeaderTitle) topSellersHeaderTitle.textContent = `Top Sellers (${data.period_title})`;
+
+                if (data.has_data) {
+                    if (chartEmptyState) chartEmptyState.classList.add("d-none");
+                    if (chartContainer) chartContainer.style.display = "block";
+                    initChart(data.labels, data.sales_values);
+                } else {
+                    if (chartInstance) {
+                        chartInstance.destroy();
+                        chartInstance = null;
+                    }
+                    if (chartContainer) chartContainer.style.display = "none";
+                    if (chartEmptyState) chartEmptyState.classList.remove("d-none");
+                }
+
+                renderTopSellers(data.top_sellers);
+            })
+            .catch(err => {
+                console.error("Error fetching period data:", err);
+            });
+    }
+
+    periodButtons.forEach(btn => {
+        btn.addEventListener("click", function() {
+            const period = this.getAttribute("data-period");
+            periodButtons.forEach(b => b.classList.remove("active"));
+            this.classList.add("active");
+
+            if (period === "custom") {
+                if (customDateRangeBar) customDateRangeBar.classList.remove("d-none");
+            } else {
+                if (customDateRangeBar) customDateRangeBar.classList.add("d-none");
+                fetchPeriodData(period);
+            }
+        });
+    });
+
+    if (applyCustomDateBtn) {
+        applyCustomDateBtn.addEventListener("click", function() {
+            const sDate = customStartDate ? customStartDate.value : "";
+            const eDate = customEndDate ? customEndDate.value : "";
+            if (!sDate || !eDate) {
+                alert("Please specify both From and To dates.");
+                return;
+            }
+            fetchPeriodData("custom", sDate, eDate);
+        });
+    }
+});
+</script>
+{% endblock %}

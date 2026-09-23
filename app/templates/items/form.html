@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Item' if action == 'edit' else 'Create New Item' }} | {{ org_name_en }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" style="max-width: 1100px;">
+    <!-- Top Action Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-0 fw-bold text-dark">{{ 'Edit Catalog Item: ' + item.sku if action == 'edit' else 'Create New Catalog Item' }}</h2>
+            <p class="text-muted mb-0 small">Bilingual descriptions, Decimal pricing, stock reorder levels, and safe image attachment.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('items.index') }}" class="btn btn-outline-secondary btn-sm px-3">
+                <i class="bi bi-arrow-left me-1"></i> Back to Catalog
+            </a>
+            <button type="submit" form="itemForm" class="btn btn-primary btn-sm px-4 shadow-sm">
+                <i class="bi bi-check2-circle me-1"></i> {{ 'Save Changes' if action == 'edit' else 'Create Item' }}
+            </button>
+        </div>
+    </div>
+
+    <form id="itemForm" method="POST" enctype="multipart/form-data" action="{{ url_for('items.edit', id=item.id) if action == 'edit' else url_for('items.create') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-4">
+            <!-- Left Column: Primary Details & Pricing -->
+            <div class="col-12 col-lg-8">
+                <!-- Section 1: Basic Identification -->
+                <div class="card mb-4">
+                    <div class="card-header py-3 border-bottom">
+                        <h6 class="card-title mb-0 fw-bold" style="color: var(--text-primary);"><i class="bi bi-tag me-2"></i>Item Identification</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">SKU (Stock Keeping Unit) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light font-monospace">#</span>
+                                    <input type="text" name="sku" class="form-control font-monospace fw-bold text-uppercase" 
+                                           value="{{ item.sku if item else suggested_sku }}" required placeholder="e.g. SKU-00001">
+                                </div>
+                                <div class="form-text">Unique alphanumeric identifier. Auto-suggested with manual override allowed.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Barcode (EAN-13 / Code-128)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-upc-scan"></i></span>
+                                    <input type="text" name="barcode" class="form-control font-monospace" 
+                                           value="{{ item.barcode if item and item.barcode else '' }}" placeholder="Scan or enter barcode">
+                                </div>
+                                <div class="form-text">Optional. Unique among non-deleted catalog items.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Item Name <span class="text-danger">*</span></label>
+                                <input type="text" name="item_name" class="form-control fw-semibold" 
+                                       value="{{ item.item_name if item else '' }}" required placeholder="e.g. Ballpoint Pen Blue 0.7mm">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Category</label>
+                                <select name="category_id" class="form-select">
+                                    <option value="">-- No Category --</option>
+                                    {% for cat in categories %}
+                                    <option value="{{ cat.id }}" {% if item and item.category_id == cat.id %}selected{% endif %}>
+                                        {{ cat.cat_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Unit of Measure <span class="text-danger">*</span></label>
+                                <select name="unit_id" class="form-select" required>
+                                    {% for u in units %}
+                                    <option value="{{ u.id }}" {% if item and item.unit_id == u.id %}selected{% endif %}>
+                                        {{ u.unit_name }} ({{ u.unit_code }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Description</label>
+                                <textarea name="description" class="form-control" rows="3" placeholder="Specifications, pack details, brand origin...">{{ item.description if item and item.description else '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Pricing, Costing & Tax -->
+                <div class="card mb-4">
+                    <div class="card-header py-3 border-bottom">
+                        <h6 class="card-title mb-0 fw-bold" style="color: var(--text-primary);"><i class="bi bi-cash-stack me-2"></i>Pricing, Tax & Discount Rules</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Purchase / Cost Price <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">{{ currency_symbol }}</span>
+                                    <input type="number" step="0.01" min="0" name="cost_price" class="form-control text-end font-monospace" 
+                                           value="{{ '%.2f'|format(item.cost_price) if item else '0.00' }}" required>
+                                </div>
+                                <div class="form-text">Used in inventory valuation.</div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Standard Sale Price <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light fw-bold" style="color: var(--text-primary);">{{ currency_symbol }}</span>
+                                    <input type="number" step="0.01" min="0" name="sale_price" class="form-control text-end font-monospace fw-bold" style="color: var(--text-primary);" 
+                                           value="{{ '%.2f'|format(item.sale_price) if item else '0.00' }}" required>
+                                </div>
+                                <div class="form-text">Primary retail checkout price.</div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Wholesale Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">{{ currency_symbol }}</span>
+                                    <input type="number" step="0.01" min="0" name="wholesale_price" class="form-control text-end font-monospace" 
+                                           value="{{ '%.2f'|format(item.wholesale_price) if item and item.wholesale_price else '' }}" placeholder="Optional">
+                                </div>
+                                <div class="form-text">Bulk institutional price.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Sales Tax Rate (%)</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" min="0" max="100" name="tax_percent" class="form-control text-end font-monospace" 
+                                           value="{{ '%.2f'|format(item.tax_percent) if item else ('%.2f'|format(default_tax)) }}">
+                                    <span class="input-group-text bg-light">%</span>
+                                </div>
+                                <div class="form-text">GST applied per Rule 1 or calculated backwards per Rule 5.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Cashier Discount Limit (%)</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" min="0" max="100" name="discount_limit" class="form-control text-end font-monospace" 
+                                           value="{{ '%.2f'|format(item.discount_limit) if item else '0.00' }}">
+                                    <span class="input-group-text bg-light">%</span>
+                                </div>
+                                <div class="form-text">Maximum discount cashier can apply without manager override.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Image & Stock Controls -->
+            <div class="col-12 col-lg-4">
+                <!-- Image Attachment Card -->
+                <div class="card mb-4">
+                    <div class="card-header py-3 border-bottom">
+                        <h6 class="card-title mb-0 fw-bold" style="color: var(--text-primary);"><i class="bi bi-image me-2"></i>Product Photo</h6>
+                    </div>
+                    <div class="card-body">
+                        {% set img = (item.images[0] if item.images else None) if (item and item.images) else None %}
+                        {% set img_resolved = image_url(img.file_path) if img else None %}
+                        {% set img_fallback = image_fallback_url(img.file_path) if img else None %}
+                        <div class="image-upload-zone"
+                             {% if action != 'create' and item and item.id %}
+                             data-upload-url="{{ url_for('items.upload_image', id=item.id) }}"
+                             data-remove-url="{{ url_for('items.remove_image', id=item.id) }}"
+                             {% else %}
+                             data-upload-url="{{ url_for('items.upload_temp_image') }}"
+                             data-temp-remove-url="{{ url_for('items.remove_temp_image') }}"
+                             {% endif %}
+                             data-image-kind="item"
+                             data-field-name="image"
+                             data-allowed-exts="png,jpg,jpeg,webp"
+                             data-max-size-mb="10.0"
+                             data-confirm-remove="Are you sure you want to remove this product image? The file will be permanently deleted.">
+                            
+                            <input type="hidden" name="remove_image" value="0">
+                            <input type="hidden" name="temp_image_path" id="tempImagePath" value="">
+                            
+                            <div class="image-drop-area position-relative" style="min-height: 180px;">
+                                <div class="preview-box" style="height: 150px;">
+                                    {% if img_resolved %}
+                                    <picture>
+                                        {% if img_resolved.endswith('.webp') %}
+                                        <source srcset="{{ img_resolved }}" type="image/webp">
+                                        {% endif %}
+                                        <img src="{{ img_fallback or img_resolved }}" alt="Product Image" class="preview-image">
+                                    </picture>
+                                    <div class="preview-placeholder d-none text-center">
+                                        <i class="bi bi-cloud-arrow-up fs-2 text-secondary mb-1"></i>
+                                        <div class="small text-secondary fw-medium">Drag image here or click to browse</div>
+                                    </div>
+                                    {% else %}
+                                    <img src="" alt="Product Preview" class="preview-image d-none">
+                                    <div class="preview-placeholder text-center">
+                                        <i class="bi bi-cloud-arrow-up fs-2 text-secondary mb-1"></i>
+                                        <div class="small text-secondary fw-medium">Drag image here or click to browse</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="upload-prompt">
+                                    <span class="d-block small text-secondary">Click to browse or drag photo (PNG, JPG, WebP &bull; Max 10MB)</span>
+                                </div>
+
+                                <!-- Hover Action Overlay -->
+                                <div class="image-hover-overlay">
+                                    <button type="button" class="btn btn-sm btn-light btn-hover-change shadow-sm">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Change
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger btn-hover-remove shadow-sm">
+                                        <i class="bi bi-trash3 me-1"></i>Remove
+                                    </button>
+                                </div>
+
+                                <!-- Facebook-style Dimmed Determinate Progress Overlay -->
+                                <div class="upload-progress-overlay d-none">
+                                    <div class="progress mb-2 w-100">
+                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="progress-label small fw-semibold text-secondary">Uploading... 0%</div>
+                                </div>
+
+                                <!-- Success Checkmark Badge -->
+                                <div class="upload-success-badge d-none position-absolute" style="z-index: 14;">
+                                    <i class="bi bi-check-lg"></i> Uploaded
+                                </div>
+
+                                <!-- In-place Retry Box on Error -->
+                                <div class="upload-retry-box d-none position-absolute" style="z-index: 15;">
+                                    <div class="retry-error-text small fw-semibold mb-2">Upload failed</div>
+                                    <button type="button" class="btn btn-sm btn-light text-danger fw-bold btn-retry-upload">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>Retry
+                                    </button>
+                                </div>
+                            </div>
+
+                            <input type="file" name="item_image" class="image-upload-input d-none" accept=".png,.jpg,.jpeg,.webp">
+                            <div class="d-flex align-items-center justify-content-between mt-2">
+                                <div class="upload-feedback flex-grow-1 me-2">
+                                    <div class="upload-error-msg d-none"></div>
+                                    <div class="upload-success-msg d-none"></div>
+                                    <div class="stored-size-badge text-muted small mt-1"></div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-image {% if not img_resolved %}d-none{% endif %}">
+                                    <i class="bi bi-trash3 me-1"></i>Remove
+                                </button>
+                            </div>
+                            <div class="form-text small mt-2">Square 1:1, 800&times;800px WebP + companion fallback. Phone EXIF oriented. Up to 10MB.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock Levels Card -->
+                <div class="card mb-4">
+                    <div class="card-header py-3 border-bottom">
+                        <h6 class="card-title mb-0 fw-bold" style="color: var(--text-primary);"><i class="bi bi-boxes me-2"></i>Stock & Reorder Alerts</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if action == 'create' %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Opening Stock Quantity</label>
+                            <input type="number" step="0.001" min="0" name="opening_stock" class="form-control text-end font-monospace" value="0.000">
+                            <div class="form-text">Initial stock count added upon creation.</div>
+                        </div>
+                        {% else %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted">Current Stock on Hand</label>
+                            <div class="form-control bg-light text-end font-monospace fw-bold fs-5 text-dark">
+                                {{ "%.3f"|format(item.current_stock) }}
+                            </div>
+                            <div class="form-text">Stock adjustments must be made via stock management ledger.</div>
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Reorder Alert Level</label>
+                            <input type="number" step="0.001" min="0" name="reorder_level" class="form-control text-end font-monospace" 
+                                   value="{{ '%.3f'|format(item.reorder_level) if item else default_reorder }}">
+                            <div class="form-text">Triggers Low Stock warning when inventory drops to or below this level.</div>
+                        </div>
+
+                        <div class="border-top pt-3 mt-3">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="is_stock_tracked" value="1" id="isStockTrackedSwitch" 
+                                       {% if not item or item.is_stock_tracked %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="isStockTrackedSwitch">Track Stock Inventory</label>
+                                <div class="form-text">Off for made-to-order items (e.g. drinks). Untracked items skip stock checks and create no stock movements at checkout.</div>
+                            </div>
+
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_active" value="1" id="isActiveSwitch" 
+                                       {% if not item or item.is_active %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="isActiveSwitch">Active in POS Checkout</label>
+                            </div>
+                            <div class="form-text">Inactive items are hidden from cashier barcode lookups.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% include "common/cropper_modal.html" %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/cropper/cropper.min.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='vendor/cropper/cropper.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/image_uploader.js') }}"></script>
+{% endblock %}

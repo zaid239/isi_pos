@@ -1,0 +1,10 @@
+;;; ============================================================
+;;; Oracle Database Logical Export
+;;; Schema: ISI | Service: orclpdb1 | Time: 2026-09-19T20:24:30.869912
+;;; Character Set: AL32UTF8
+;;; ============================================================
+;;; ------------------------------------------------------------
+Master export for schema "ISI" successfully completed.
+Total tables exported: 0
+Total rows exported:   0
+Job completed with 0 errors and 0 warnings.
